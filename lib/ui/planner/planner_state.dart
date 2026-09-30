@@ -25,6 +25,7 @@ final class PlannerState {
     this.startPendingEntryId,
     this.failureMessage,
     this.startedSessionId,
+    this.copySuccessCount,
   });
 
   final PlannerLoadPhase loadPhase;
@@ -36,6 +37,7 @@ final class PlannerState {
   final int? startPendingEntryId;
   final String? failureMessage;
   final int? startedSessionId;
+  final int? copySuccessCount;
 
   CalendarDate get weekEndExclusive => weekStart.addDays(7);
 
@@ -81,6 +83,8 @@ final class PlannerState {
     bool clearFailureMessage = false,
     int? startedSessionId,
     bool clearStartedSessionId = false,
+    int? copySuccessCount,
+    bool clearCopySuccessCount = false,
   }) {
     return PlannerState(
       loadPhase: loadPhase ?? this.loadPhase,
@@ -98,6 +102,9 @@ final class PlannerState {
       startedSessionId: clearStartedSessionId
           ? null
           : (startedSessionId ?? this.startedSessionId),
+      copySuccessCount: clearCopySuccessCount
+          ? null
+          : (copySuccessCount ?? this.copySuccessCount),
     );
   }
 }

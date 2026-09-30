@@ -21,4 +21,11 @@ abstract interface class ScheduleRepository {
   Future<Result<void>> move(int entryId, CalendarDate date);
 
   Future<Result<void>> setSkipped(int entryId, {required bool skipped});
+
+  /// Copies planned entries from [sourceWeekStart] into the next calendar week.
+  ///
+  /// The target is exactly `sourceWeekStart.addDays(7)`. All eligible rows are
+  /// committed atomically and the result is their committed count. Existing
+  /// target entries are neither replaced nor deduplicated.
+  Future<Result<int>> copyWeekForward(CalendarDate sourceWeekStart);
 }

@@ -142,6 +142,51 @@ void main() {
   });
 
   test(
+    'copyWeekForward emits success including zero and routes its week',
+    () async {
+      final schedules = FakeScheduleRepository()
+        ..copyWeekForwardResult = const Ok(2);
+      final cubit = buildCubit(schedules: schedules)..initialize();
+      await pumpEventQueue();
+
+      await cubit.copyWeekForward();
+      expect(schedules.copyWeekForwardCalls, 1);
+      expect(schedules.lastCopyWeekStart, weekStart);
+      expect(cubit.state.copySuccessCount, 2);
+      cubit.clearCopySuccessCount();
+      expect(cubit.state.copySuccessCount, isNull);
+
+      cubit.goToNextWeek();
+      schedules.copyWeekForwardResult = const Ok(0);
+      await cubit.copyWeekForward();
+      expect(schedules.lastCopyWeekStart, weekStart.addDays(7));
+      expect(cubit.state.copySuccessCount, 0);
+      await cubit.close();
+    },
+  );
+
+  test(
+    'copyWeekForward surfaces failure and ignores concurrent calls',
+    () async {
+      final schedules = FakeScheduleRepository();
+      final completer = Completer<Result<int>>();
+      schedules.copyWeekForwardOverride = (_) => completer.future;
+      final cubit = buildCubit(schedules: schedules)..initialize();
+      await pumpEventQueue();
+
+      final first = cubit.copyWeekForward();
+      final second = cubit.copyWeekForward();
+      expect(cubit.state.actionPending, isTrue);
+      expect(schedules.copyWeekForwardCalls, 1);
+      completer.complete(const Err(StorageFailure('copy failed')));
+      await Future.wait([first, second]);
+      expect(cubit.state.actionPending, isFalse);
+      expect(cubit.state.failureMessage, 'copy failed');
+      await cubit.close();
+    },
+  );
+
+  test(
     'startEntry emits session id on success and keeps week stream',
     () async {
       final schedules = FakeScheduleRepository(seed: [entry()]);

@@ -315,4 +315,199 @@ void main() {
     expect((events.last as Ok).value.single.workoutName, 'Push v2');
     await sub.cancel();
   });
+
+  test(
+    'copyWeekForward copies planned structure and preserves target rows',
+    () async {
+      final plannedWorkout = await insertWorkout(database, name: 'Push');
+      final archivedWorkout = await insertWorkout(database, name: 'Old Pull');
+      await (database.update(database.workout)
+            ..where((row) => row.id.equals(archivedWorkout)))
+          .write(WorkoutCompanion(archivedAt: Value(startedAt)));
+      final skippedWorkout = await insertWorkout(database, name: 'Skipped');
+      final completedWorkout = await insertWorkout(database, name: 'Completed');
+      await insertSchedule(
+        database,
+        workoutId: plannedWorkout,
+        date: '2026-09-22',
+        startTime: 480,
+        label: 'AM',
+      );
+      await insertSchedule(
+        database,
+        workoutId: archivedWorkout,
+        date: '2026-09-27',
+      );
+      await insertSchedule(
+        database,
+        workoutId: skippedWorkout,
+        date: '2026-09-23',
+        status: 'skipped',
+      );
+      final completedId = await insertSchedule(
+        database,
+        workoutId: completedWorkout,
+        date: '2026-09-24',
+      );
+      final sessionId = await insertSession(
+        database,
+        workoutId: completedWorkout,
+        scheduleEntryId: completedId,
+        status: 'finished',
+      );
+      await (database.update(
+        database.scheduleEntry,
+      )..where((row) => row.id.equals(completedId))).write(
+        ScheduleEntryCompanion(
+          status: const Value('completed_by_session'),
+          sessionId: Value(sessionId),
+        ),
+      );
+      final existingTargetId = await insertSchedule(
+        database,
+        workoutId: plannedWorkout,
+        date: '2026-09-29',
+        label: 'Existing',
+      );
+
+      final result = await repository.copyWeekForward(weekStart);
+      expect(result, isA<Ok<int>>());
+      expect((result as Ok<int>).value, 2);
+
+      final target = await repository
+          .watchRange(
+            startInclusive: weekStart.addDays(7),
+            endExclusive: weekStart.addDays(14),
+          )
+          .first;
+      final entries = (target as Ok<List<ScheduledWorkout>>).value;
+      expect(entries, hasLength(3));
+      expect(entries.map((entry) => entry.id), contains(existingTargetId));
+      final copied = entries
+          .where((entry) => entry.id != existingTargetId)
+          .toList();
+      expect(copied.map((entry) => entry.workoutId), [
+        plannedWorkout,
+        archivedWorkout,
+      ]);
+      expect(copied.map((entry) => entry.date.toIso()), [
+        '2026-09-29',
+        '2026-10-04',
+      ]);
+      expect(copied.first.startTime?.minutesFromMidnight, 480);
+      expect(copied.first.label, 'AM');
+      expect(copied.last.startTime, isNull);
+      expect(copied.last.label, isNull);
+      expect(
+        copied.every((entry) => entry.status == ScheduleStatus.planned),
+        isTrue,
+      );
+      expect(copied.every((entry) => entry.sessionId == null), isTrue);
+      expect(copied.last.workoutArchived, isTrue);
+    },
+  );
+
+  test(
+    'copyWeekForward returns zero and rejects corruption before writes',
+    () async {
+      final workoutId = await insertWorkout(database);
+      await insertSchedule(
+        database,
+        workoutId: workoutId,
+        date: '2026-09-22',
+        status: 'skipped',
+      );
+      final zero = await repository.copyWeekForward(weekStart);
+      expect(zero, isA<Ok<int>>());
+      expect((zero as Ok<int>).value, 0);
+
+      await database.customStatement('PRAGMA ignore_check_constraints = ON');
+      await database.customStatement(
+        "INSERT INTO schedule_entry (workout_id, date, status) "
+        "VALUES (?, '2026-09-23', 'bogus')",
+        [workoutId],
+      );
+      await database.customStatement('PRAGMA ignore_check_constraints = OFF');
+      final corrupt = await repository.copyWeekForward(weekStart);
+      expect(corrupt, isA<Err<int>>());
+      expect((corrupt as Err).failure, isA<ValidationFailure>());
+      final targetRows = await (database.select(
+        database.scheduleEntry,
+      )..where((row) => row.date.equals('2026-09-29'))).get();
+      expect(targetRows, isEmpty);
+
+      final yearEnd =
+          (CalendarDate.fromIso('2026-12-29') as Ok<CalendarDate>).value;
+      await insertSchedule(database, workoutId: workoutId, date: '2026-12-30');
+      // The corrupt row is outside this source range, so this verifies
+      // calendar-date arithmetic independently of timezone instants.
+      final yearCopy = await repository.copyWeekForward(yearEnd);
+      expect(yearCopy, isA<Ok<int>>());
+      expect((yearCopy as Ok<int>).value, 1);
+      final yearTarget = await (database.select(
+        database.scheduleEntry,
+      )..where((row) => row.date.equals('2027-01-06'))).getSingle();
+      expect(yearTarget.workoutId, workoutId);
+    },
+  );
+
+  test('copyWeekForward rolls back every row when an insert fails', () async {
+    final workoutId = await insertWorkout(database);
+    await insertSchedule(
+      database,
+      workoutId: workoutId,
+      date: '2026-09-22',
+      label: 'first',
+    );
+    await insertSchedule(
+      database,
+      workoutId: workoutId,
+      date: '2026-09-23',
+      label: 'reject',
+    );
+    await database.customStatement('''
+      CREATE TRIGGER reject_copied_schedule_entry
+      BEFORE INSERT ON schedule_entry
+      WHEN NEW.label = 'reject'
+      BEGIN
+        SELECT RAISE(ABORT, 'copy rejected');
+      END;
+    ''');
+
+    final result = await repository.copyWeekForward(weekStart);
+    expect(result, isA<Err<int>>());
+    expect((result as Err).failure, isA<StorageFailure>());
+    final targetRows =
+        await (database.select(database.scheduleEntry)..where(
+              (row) =>
+                  row.date.isBiggerOrEqualValue('2026-09-28') &
+                  row.date.isSmallerThanValue('2026-10-05'),
+            ))
+            .get();
+    expect(targetRows, isEmpty);
+  });
+
+  test('copyWeekForward validates all planned dates before writing', () async {
+    final workoutId = await insertWorkout(database);
+    await insertSchedule(database, workoutId: workoutId, date: '2026-09-22');
+    await database.customStatement('PRAGMA ignore_check_constraints = ON');
+    await database.customStatement(
+      "INSERT INTO schedule_entry (workout_id, date, status) "
+      "VALUES (?, '2026-09-24x', 'planned')",
+      [workoutId],
+    );
+    await database.customStatement('PRAGMA ignore_check_constraints = OFF');
+
+    final result = await repository.copyWeekForward(weekStart);
+    expect(result, isA<Err<int>>());
+    expect((result as Err).failure, isA<ValidationFailure>());
+    final targetRows =
+        await (database.select(database.scheduleEntry)..where(
+              (row) =>
+                  row.date.isBiggerOrEqualValue('2026-09-28') &
+                  row.date.isSmallerThanValue('2026-10-05'),
+            ))
+            .get();
+    expect(targetRows, isEmpty);
+  });
 }

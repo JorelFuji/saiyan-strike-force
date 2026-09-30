@@ -127,6 +127,33 @@ final class PlannerCubit extends Cubit<PlannerState> {
     }
   }
 
+  Future<void> copyWeekForward() async {
+    if (state.actionPending) return;
+    emit(
+      state.copyWith(
+        actionPending: true,
+        clearFailureMessage: true,
+        clearCopySuccessCount: true,
+      ),
+    );
+    final result = await _schedules.copyWeekForward(state.weekStart);
+    if (isClosed) return;
+    switch (result) {
+      case Ok(:final value):
+        emit(
+          state.copyWith(
+            actionPending: false,
+            copySuccessCount: value,
+            clearFailureMessage: true,
+          ),
+        );
+      case Err(:final failure):
+        emit(
+          state.copyWith(actionPending: false, failureMessage: failure.message),
+        );
+    }
+  }
+
   Future<void> startEntry(int entryId) async {
     if (state.actionPending || state.startPendingEntryId != null) return;
     final entry = state.weekEntries.where((e) => e.id == entryId).firstOrNull;
@@ -198,6 +225,11 @@ final class PlannerCubit extends Cubit<PlannerState> {
   void clearStartedSessionId() {
     if (state.startedSessionId == null) return;
     emit(state.copyWith(clearStartedSessionId: true));
+  }
+
+  void clearCopySuccessCount() {
+    if (state.copySuccessCount == null) return;
+    emit(state.copyWith(clearCopySuccessCount: true));
   }
 
   void clearFailureMessage() {

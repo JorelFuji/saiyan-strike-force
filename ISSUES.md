@@ -53,6 +53,7 @@ No outcomes are ready to begin.
 | VF-013 | Start and complete freestyle sessions without a template (explicit exercise/set removal is excluded; completion never deletes a set) | feature | P0 | done | VF-005, VF-006 | [spike](.ai/spikes/2026-09-29-vf-013-freestyle-sessions.md), [implementation spec](.ai/specs/2026-09-29-vf-013-freestyle-sessions.md), [start workflow](lib/domain/usecases/start_session.dart), [transactional repository](lib/data/repositories/drift_session_repository.dart), [Today](lib/ui/today/today_page.dart), [Active Session](lib/ui/active_session/active_session_page.dart), [tests](test/data/repositories/drift_session_repository_test.dart) |
 | VF-014 | Reversible workout-template archive management (builder/detail/create/edit/duplicate/direct-start/permanent deletion excluded) | feature | P0 | done | VF-015 | [delivery tests](test/ui/workouts/workouts_page_test.dart), [repository tests](test/data/repositories/drift_workout_repository_test.dart), [archive UI](lib/ui/workouts/workouts_page.dart). Manual Android/iOS, screen-reader, focus, and device checks remain unavailable in this environment. |
 | VF-015 | Create and edit workout templates through an accessible builder | feature | P0 | done | VF-003, VF-011 | [implementation plan](.ai/specs/2026-09-30-vf-015-accessible-workout-template-builder.md), [suggestion repository](lib/data/repositories/drift_exercise_name_repository.dart), [route-owned builder](lib/ui/workouts/workout_builder_cubit.dart), [builder page](lib/ui/workouts/workout_builder_page.dart), [shared load formatter](lib/ui/core/formatters/load_formatter.dart), [repository tests](test/data/repositories/drift_exercise_name_repository_test.dart), [builder tests](test/ui/workouts/workout_builder_page_test.dart), [router tests](test/app/router_test.dart) |
+| VF-016 | Copy a planned week forward transactionally | feature | P1 | done | — | [Planner specification](docs/vulcan/features/planner.md), [prioritization spike](.ai/spikes/2026-09-30-p1-roadmap-prioritization.md), [implementation plan](.ai/specs/2026-09-30-vf-016-copy-planned-week-forward.md), [repository](lib/data/repositories/drift_schedule_repository.dart), [Planner](lib/ui/planner/planner_page.dart), [tests](test/data/repositories/drift_schedule_repository_test.dart) |
 
 ## Delivery evidence
 
@@ -170,3 +171,12 @@ tests), and Android debug build passed. Physical Android/iOS, TalkBack,
 VoiceOver, largest platform text, high/increased contrast, bold text, Reduce
 Motion, landscape, keyboard, and small-phone checks remain unverified in this
 environment.
+
+`VF-016` delivery evidence: planned schedule entries are copied to the next
+calendar week in one transaction, retaining local metadata and archived
+templates while excluding terminal rows and session links. The Planner requires
+explicit confirmation and gives accessible committed-result feedback. On
+2026-09-30, SDK-pin verification, formatting, `git diff --check`, analyzer,
+the full coverage test suite, and Android debug build passed. Physical
+Android/iOS, TalkBack/VoiceOver, largest-text, high/increased contrast,
+landscape, and small-phone checks remain unverified in this environment.

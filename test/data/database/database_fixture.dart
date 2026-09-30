@@ -72,6 +72,7 @@ Future<int> insertSchedule(
   required int workoutId,
   String date = '2026-09-22',
   int? startTime,
+  String? label,
   String status = 'planned',
   int? sessionId,
 }) {
@@ -82,6 +83,7 @@ Future<int> insertSchedule(
           workoutId: workoutId,
           date: date,
           startTime: Value(startTime),
+          label: Value(label),
           status: status,
           sessionId: Value(sessionId),
         ),

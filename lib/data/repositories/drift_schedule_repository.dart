@@ -180,6 +180,64 @@ final class DriftScheduleRepository implements ScheduleRepository {
     }
   }
 
+  @override
+  Future<Result<int>> copyWeekForward(CalendarDate sourceWeekStart) async {
+    try {
+      return await database.transaction(() async {
+        final sourceEndExclusive = sourceWeekStart.addDays(7);
+        final sourceEntries =
+            await (database.select(database.scheduleEntry)
+                  ..where(
+                    (row) =>
+                        row.date.isBiggerOrEqualValue(sourceWeekStart.toIso()) &
+                        row.date.isSmallerThanValue(sourceEndExclusive.toIso()),
+                  )
+                  ..orderBy([
+                    (row) => OrderingTerm.asc(row.date),
+                    (row) => OrderingTerm.asc(row.startTime),
+                    (row) => OrderingTerm.asc(row.id),
+                  ]))
+                .get();
+
+        final plannedEntries = <(ScheduleEntryData, CalendarDate)>[];
+        for (final entry in sourceEntries) {
+          final status = ScheduleStatus.fromWire(entry.status);
+          if (status case Err(:final failure)) {
+            return Err<int>(failure);
+          }
+          if ((status as Ok<ScheduleStatus>).value != ScheduleStatus.planned) {
+            continue;
+          }
+          final date = CalendarDate.fromIso(entry.date);
+          if (date case Err(:final failure)) {
+            return Err<int>(failure);
+          }
+          plannedEntries.add((entry, (date as Ok<CalendarDate>).value));
+        }
+
+        var copied = 0;
+        for (final (entry, date) in plannedEntries) {
+          await database
+              .into(database.scheduleEntry)
+              .insert(
+                ScheduleEntryCompanion.insert(
+                  workoutId: entry.workoutId,
+                  date: date.addDays(7).toIso(),
+                  startTime: Value(entry.startTime),
+                  label: Value(entry.label),
+                  status: ScheduleStatus.planned.wireValue,
+                  sessionId: const Value(null),
+                ),
+              );
+          copied++;
+        }
+        return Ok(copied);
+      });
+    } on Exception catch (error, stack) {
+      return Err(_storageFailure(error, stack));
+    }
+  }
+
   Future<ScheduleEntryData?> _loadEntry(int entryId) {
     return (database.select(
       database.scheduleEntry,

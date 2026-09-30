@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/models/calendar_date.dart';
 import 'planner_cubit.dart';
 import 'planner_state.dart';
 import 'widgets/add_workout_sheet.dart';
@@ -17,6 +18,7 @@ class PlannerPage extends StatelessWidget {
     return BlocConsumer<PlannerCubit, PlannerState>(
       listenWhen: (previous, current) =>
           previous.startedSessionId != current.startedSessionId ||
+          previous.copySuccessCount != current.copySuccessCount ||
           (previous.failureMessage != current.failureMessage &&
               current.failureMessage != null &&
               current.loadPhase == PlannerLoadPhase.ready),
@@ -25,6 +27,16 @@ class PlannerPage extends StatelessWidget {
         if (sessionId != null) {
           context.read<PlannerCubit>().clearStartedSessionId();
           context.push('/session/$sessionId');
+          return;
+        }
+        final copyCount = state.copySuccessCount;
+        if (copyCount != null) {
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(content: Text(_copySuccessMessage(copyCount))),
+            );
+          context.read<PlannerCubit>().clearCopySuccessCount();
           return;
         }
         final message = state.failureMessage;
@@ -38,12 +50,33 @@ class PlannerPage extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<PlannerCubit>();
         return Scaffold(
-          appBar: AppBar(title: const Text('Planner')),
+          appBar: AppBar(
+            title: const Text('Planner'),
+            actions: [
+              Semantics(
+                label: 'Copy week forward',
+                button: true,
+                child: IconButton(
+                  tooltip: 'Copy week forward',
+                  constraints: const BoxConstraints(
+                    minWidth: 48,
+                    minHeight: 48,
+                  ),
+                  onPressed: state.actionPending
+                      ? null
+                      : () => _confirmCopyWeekForward(context, state),
+                  icon: const Icon(Icons.copy_all_outlined),
+                ),
+              ),
+            ],
+          ),
           floatingActionButton: Semantics(
             label: 'Add workout',
             button: true,
             child: FloatingActionButton(
-              onPressed: () => showAddWorkoutSheet(context),
+              onPressed: state.actionPending
+                  ? null
+                  : () => showAddWorkoutSheet(context),
               tooltip: 'Add workout',
               child: const Icon(Icons.add),
             ),
@@ -58,6 +91,7 @@ class PlannerPage extends StatelessWidget {
                 onSelectDay: cubit.selectDay,
                 onPreviousWeek: cubit.goToPreviousWeek,
                 onNextWeek: cubit.goToNextWeek,
+                actionPending: state.actionPending,
               ),
               const Divider(height: 1),
               Expanded(child: _PlannerBody(state: state)),
@@ -67,6 +101,46 @@ class PlannerPage extends StatelessWidget {
       },
     );
   }
+}
+
+Future<void> _confirmCopyWeekForward(
+  BuildContext context,
+  PlannerState state,
+) async {
+  final localizations = MaterialLocalizations.of(context);
+  String dateLabel(CalendarDate date) =>
+      localizations.formatMediumDate(DateTime(date.year, date.month, date.day));
+  final targetStart = state.weekStart.addDays(7);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: const Text('Copy week forward?'),
+      content: Text(
+        'Copy planned workouts from ${dateLabel(state.weekStart)} to '
+        '${dateLabel(targetStart)}. Planned workouts are added to next week; '
+        'existing next-week workouts are not replaced.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Copy week'),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true && context.mounted) {
+    await context.read<PlannerCubit>().copyWeekForward();
+  }
+}
+
+String _copySuccessMessage(int count) {
+  if (count == 0) return 'No planned workouts to copy.';
+  if (count == 1) return 'Copied 1 workout to next week.';
+  return 'Copied $count workouts to next week.';
 }
 
 class _PlannerBody extends StatelessWidget {

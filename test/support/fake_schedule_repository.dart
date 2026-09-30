@@ -23,13 +23,18 @@ final class FakeScheduleRepository implements ScheduleRepository {
   int addCalls = 0;
   int moveCalls = 0;
   int setSkippedCalls = 0;
+  int copyWeekForwardCalls = 0;
 
   CalendarDate? lastStartInclusive;
   CalendarDate? lastEndExclusive;
+  CalendarDate? lastCopyWeekStart;
 
   Result<ScheduledWorkout>? addResult;
   Result<void> moveResult = const Ok(null);
   Result<void> setSkippedResult = const Ok(null);
+  Result<int>? copyWeekForwardResult;
+  Future<Result<int>> Function(CalendarDate sourceWeekStart)?
+  copyWeekForwardOverride;
 
   List<ScheduledWorkout> get entries => List.unmodifiable(_entries);
 
@@ -153,6 +158,47 @@ final class FakeScheduleRepository implements ScheduleRepository {
     _entries[index] = updated;
     _emit();
     return const Ok(null);
+  }
+
+  @override
+  Future<Result<int>> copyWeekForward(CalendarDate sourceWeekStart) async {
+    copyWeekForwardCalls++;
+    lastCopyWeekStart = sourceWeekStart;
+    final override = copyWeekForwardOverride;
+    if (override != null) return override(sourceWeekStart);
+    final result = copyWeekForwardResult;
+    if (result is Err<int>) return result;
+    if (result is Ok<int>) return result;
+
+    final targetStart = sourceWeekStart.addDays(7);
+    final sourceEnd = targetStart;
+    final copied = _entries
+        .where(
+          (entry) =>
+              entry.date >= sourceWeekStart &&
+              entry.date < sourceEnd &&
+              entry.status == ScheduleStatus.planned,
+        )
+        .toList();
+    var nextId = _entries.isEmpty
+        ? 1
+        : _entries.map((entry) => entry.id).reduce((a, b) => a > b ? a : b) + 1;
+    for (final entry in copied) {
+      _entries.add(
+        (ScheduledWorkout.create(
+          id: nextId++,
+          workoutId: entry.workoutId,
+          date: entry.date.addDays(7),
+          startTime: entry.startTime,
+          label: entry.label,
+          status: ScheduleStatus.planned,
+          workoutName: entry.workoutName,
+          workoutArchived: entry.workoutArchived,
+        ) as Ok<ScheduledWorkout>).value,
+      );
+    }
+    _emit();
+    return Ok(copied.length);
   }
 
   List<ScheduledWorkout> _filter(

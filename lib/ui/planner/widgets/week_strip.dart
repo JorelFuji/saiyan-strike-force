@@ -12,6 +12,7 @@ class WeekStrip extends StatelessWidget {
     required this.onSelectDay,
     required this.onPreviousWeek,
     required this.onNextWeek,
+    this.actionPending = false,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class WeekStrip extends StatelessWidget {
   final ValueChanged<CalendarDate> onSelectDay;
   final VoidCallback onPreviousWeek;
   final VoidCallback onNextWeek;
+  final bool actionPending;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +41,7 @@ class WeekStrip extends StatelessWidget {
               button: true,
               child: IconButton(
                 tooltip: 'Previous week',
-                onPressed: onPreviousWeek,
+                onPressed: actionPending ? null : onPreviousWeek,
                 icon: const Icon(Icons.chevron_left),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
@@ -56,7 +58,7 @@ class WeekStrip extends StatelessWidget {
               button: true,
               child: IconButton(
                 tooltip: 'Next week',
-                onPressed: onNextWeek,
+                onPressed: actionPending ? null : onNextWeek,
                 icon: const Icon(Icons.chevron_right),
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
               ),
@@ -66,14 +68,16 @@ class WeekStrip extends StatelessWidget {
         SizedBox(
           height: 80,
           child: GestureDetector(
-            onHorizontalDragEnd: (details) {
-              final velocity = details.primaryVelocity ?? 0;
-              if (velocity < -200) {
-                onNextWeek();
-              } else if (velocity > 200) {
-                onPreviousWeek();
-              }
-            },
+            onHorizontalDragEnd: actionPending
+                ? null
+                : (details) {
+                    final velocity = details.primaryVelocity ?? 0;
+                    if (velocity < -200) {
+                      onNextWeek();
+                    } else if (velocity > 200) {
+                      onPreviousWeek();
+                    }
+                  },
             child: Row(
               children: [
                 for (final day in days)
@@ -90,7 +94,7 @@ class WeekStrip extends StatelessWidget {
                       selected: day == selectedDate,
                       isToday: day == today,
                       entryCount: entryCountFor(day),
-                      onTap: () => onSelectDay(day),
+                      onTap: actionPending ? null : () => onSelectDay(day),
                     ),
                   ),
               ],
@@ -131,7 +135,7 @@ class _DayCell extends StatelessWidget {
   final bool selected;
   final bool isToday;
   final int entryCount;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

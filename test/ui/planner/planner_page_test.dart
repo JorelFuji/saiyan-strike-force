@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:vulcan_fitness/core/clock.dart';
+import 'package:vulcan_fitness/core/failure.dart';
 import 'package:vulcan_fitness/core/result.dart';
 import 'package:vulcan_fitness/domain/models/schedule_status.dart';
 import 'package:vulcan_fitness/domain/models/scheduled_workout.dart';
@@ -123,6 +124,7 @@ void main() {
     expect(find.text('Skip'), findsOneWidget);
     expect(find.text('Move'), findsOneWidget);
     expect(find.byTooltip('Add workout'), findsOneWidget);
+    expect(find.byTooltip('Copy week forward'), findsOneWidget);
     expect(find.byTooltip('Previous week'), findsOneWidget);
   });
 
@@ -163,6 +165,52 @@ void main() {
     await pumpPlanner(tester, textScale: 1.3);
     expect(find.text('Planner'), findsOneWidget);
     expect(find.byTooltip('Add workout'), findsOneWidget);
+    expect(find.byTooltip('Copy week forward'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
+  });
+
+  testWidgets('copy week requires confirmation and shows success feedback', (
+    tester,
+  ) async {
+    final schedules = FakeScheduleRepository(seed: [plannedEntry()]);
+    await pumpPlanner(tester, schedules: schedules);
+
+    await tester.tap(find.byTooltip('Copy week forward'));
+    await tester.pumpAndSettle();
+    expect(find.text('Copy week forward?'), findsOneWidget);
+    expect(
+      find.textContaining('existing next-week workouts are not replaced'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(schedules.copyWeekForwardCalls, 0);
+
+    await tester.tap(find.byTooltip('Copy week forward'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy week'));
+    await tester.pumpAndSettle();
+    expect(schedules.copyWeekForwardCalls, 1);
+    expect(find.text('Copied 1 workout to next week.'), findsOneWidget);
+  });
+
+  testWidgets('copy week shows zero and failure feedback', (tester) async {
+    final schedules = FakeScheduleRepository()
+      ..copyWeekForwardResult = const Ok(0);
+    await pumpPlanner(tester, schedules: schedules);
+    await tester.tap(find.byTooltip('Copy week forward'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy week'));
+    await tester.pumpAndSettle();
+    expect(find.text('No planned workouts to copy.'), findsOneWidget);
+
+    schedules.copyWeekForwardResult = const Err(
+      StorageFailure('copy unavailable'),
+    );
+    await tester.tap(find.byTooltip('Copy week forward'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Copy week'));
+    await tester.pumpAndSettle();
+    expect(find.text('copy unavailable'), findsOneWidget);
   });
 }
