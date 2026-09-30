@@ -32,7 +32,7 @@ scan, move them into an archive section without renumbering or removing them.
 
 ## Ready next
 
-- VF-018 — Add superset support to templates and Active Session (P1).
+No ready issues are currently queued.
 
 ## Issues
 
@@ -55,7 +55,7 @@ scan, move them into an archive section without renumbering or removing them.
 | VF-015 | Create and edit workout templates through an accessible builder | feature | P0 | done | VF-003, VF-011 | [implementation plan](.ai/specs/2026-09-30-vf-015-accessible-workout-template-builder.md), [suggestion repository](lib/data/repositories/drift_exercise_name_repository.dart), [route-owned builder](lib/ui/workouts/workout_builder_cubit.dart), [builder page](lib/ui/workouts/workout_builder_page.dart), [shared load formatter](lib/ui/core/formatters/load_formatter.dart), [repository tests](test/data/repositories/drift_exercise_name_repository_test.dart), [builder tests](test/ui/workouts/workout_builder_page_test.dart), [router tests](test/app/router_test.dart) |
 | VF-016 | Copy a planned week forward transactionally | feature | P1 | done | — | [Planner specification](docs/vulcan/features/planner.md), [prioritization spike](.ai/spikes/2026-09-30-p1-roadmap-prioritization.md), [implementation plan](.ai/specs/2026-09-30-vf-016-copy-planned-week-forward.md), [repository](lib/data/repositories/drift_schedule_repository.dart), [Planner](lib/ui/planner/planner_page.dart), [tests](test/data/repositories/drift_schedule_repository_test.dart) |
 | VF-017 | Add a read-only month-dot overview with selected-day drill-in | feature | P1 | done | VF-016 | [implementation spec](.ai/specs/2026-09-30-vf-017-month-dot-overview.md), [Planner](lib/ui/planner/planner_page.dart), [Planner Cubit](lib/ui/planner/planner_cubit.dart), [MonthGrid](lib/ui/planner/widgets/month_grid.dart), [Planner tests](test/ui/planner) |
-| VF-018 | Add superset support to templates and Active Session | feature | P1 | ready | VF-006, VF-015 | [roadmap](docs/vulcan/roadmap.md), [Active Session requirements](docs/vulcan/features/active-session.md), [template requirements](docs/vulcan/features/templates.md) |
+| VF-018 | Add superset support to templates and Active Session | feature | P1 | done | VF-006, VF-015 | [implementation spec](.ai/specs/2026-09-30-vf-018-superset-support.md), [template requirements](docs/vulcan/features/templates.md), [Active Session requirements](docs/vulcan/features/active-session.md), [grouping helper](lib/ui/workouts/superset_grouping.dart), [round helper](lib/ui/active_session/superset_rounds.dart), [builder tests](test/ui/workouts/workout_builder_cubit_test.dart), [Active Session tests](test/ui/active_session/active_session_cubit_test.dart), [repository tests](test/data/repositories/drift_session_repository_test.dart) |
 
 ## Delivery evidence
 
@@ -191,3 +191,16 @@ focused Planner tests, the full Flutter test suite, and Android debug build
 passed. Physical Android/iOS, TalkBack/VoiceOver, focus order, high contrast,
 reduced motion, maximum OS text scaling, small-phone fallback, and landscape
 checks remain unverified in this environment.
+
+`VF-018` delivery evidence: template builders now author only adjacent
+supersets through explicit accessible controls, normalize group tokens before
+save, and retain stable row identity. Active Session derives round order,
+skips exhausted unequal-count members, and starts absolute rest only after the
+round's final available member commits while preserving retry and notification
+semantics. No schema migration or repository API change was required. On
+2026-09-30, SDK-pin verification, formatting, `git diff --check`, analyzer,
+the full Flutter test suite (398 tests), and Android debug build passed.
+Physical Android/iOS, TalkBack/VoiceOver, focus, maximum text scale, high
+contrast, reduced motion, landscape, small-phone, background/termination
+notification, and permission-denial device checks remain unverified in this
+environment.

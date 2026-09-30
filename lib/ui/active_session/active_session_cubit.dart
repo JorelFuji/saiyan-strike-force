@@ -13,6 +13,7 @@ import '../../domain/repositories/settings_repository.dart';
 import '../../domain/services/notification_service.dart';
 import 'active_session_state.dart';
 import 'set_draft.dart';
+import 'superset_rounds.dart';
 
 final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
   ActiveSessionCubit({
@@ -496,9 +497,10 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
           ),
         );
         final timezone = state.session?.timezone ?? 'UTC';
-        if (command.rest case final rest?) {
+        final preservedRest = identical(command.rest, state.session?.rest);
+        if (command.rest case final rest? when !preservedRest) {
           await _scheduleRestNotification(rest, timezone);
-        } else {
+        } else if (!preservedRest && state.session?.rest == null) {
           await _cancelRestNotification();
         }
       case Err(:final failure):
@@ -649,7 +651,8 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
   }
 
   AbsoluteRestState? _restForCompleteSetCommand(int setId) {
-    if (_restAutoStart) {
+    if (_restAutoStart &&
+        completionEndsRound(state.session?.exercises ?? const [], setId)) {
       final exercise = _exerciseForSet(setId);
       if (exercise == null) {
         return state.session?.rest;

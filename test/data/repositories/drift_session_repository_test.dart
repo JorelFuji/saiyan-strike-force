@@ -357,6 +357,7 @@ void main() {
       final before = await (database.select(
         database.sessionExercise,
       )..where((row) => row.sessionId.equals(sessionId))).getSingle();
+      expect(before.supersetGroup, 2);
       final replacement = (TemplateExercise.create(
         name: 'Incline Press',
         plannedSets: 4,
@@ -376,6 +377,7 @@ void main() {
         database.sessionExercise,
       )..where((row) => row.sessionId.equals(sessionId))).getSingle();
       expect(after.nameSnapshot, before.nameSnapshot);
+      expect(after.supersetGroup, before.supersetGroup);
       expect(after.plannedSets, before.plannedSets);
       expect(after.plannedWeightCanonicalMg, before.plannedWeightCanonicalMg);
       expect(await workouts.delete(created.id), isA<Ok<void>>());
@@ -386,6 +388,7 @@ void main() {
         database.session,
       )..where((row) => row.id.equals(sessionId))).getSingle();
       expect(afterDelete.nameSnapshot, before.nameSnapshot);
+      expect(afterDelete.supersetGroup, before.supersetGroup);
       expect(session.workoutId, isNull);
     },
   );

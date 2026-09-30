@@ -67,7 +67,7 @@ session_exercise
   planned_rep_type / planned_target_reps / planned_min_reps / planned_max_reps
   planned_load_type + corresponding planned load fields
   planned_rest_seconds
-  superset_group            nullable, P1
+  superset_group            nullable
 
 session_set
   id
@@ -114,6 +114,19 @@ Also:
 - Add an exercise on the fly (session diverges from template; template unchanged).
 - Live elapsed session timer from `started_at`.
 - Finish → Session Summary (total volume, duration, sets/reps completed vs. planned) → local save is already done.
+
+### Superset rounds
+
+For a valid contiguous group of two or more snapshot exercises, Active Session
+selects members in template order one round at a time. A member with no set in
+a later round is skipped, so unequal planned set counts do not create a false
+pause. Auto-rest starts only after the final available member of the round
+commits, using that member's planned rest duration. Non-final members do not
+replace or clear an already armed rest. Legacy singleton or non-contiguous
+tokens are treated as ordinary exercises at read time.
+
+There is no group-level rest, circuit behavior, non-adjacent membership, or
+in-session grouping.
 
 ## Rest timer
 

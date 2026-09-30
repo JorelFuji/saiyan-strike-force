@@ -63,6 +63,45 @@ void main() {
     ) as Ok<ActiveSession>).value;
   }
 
+  ActiveSession groupedSession({required bool firstMemberComplete}) {
+    SessionSetSnapshot makeSet(int id, int exerciseId, bool completed) =>
+        (SessionSetSnapshot.create(
+          id: id,
+          sessionExerciseId: exerciseId,
+          setIndex: 0,
+          plannedReps: (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
+          plannedLoad: LoadPrescription.bodyweight,
+          completed: completed,
+          completedAt: completed ? DateTime.utc(2026, 9, 26, 12) : null,
+        ) as Ok<SessionSetSnapshot>).value;
+
+    SessionExerciseSnapshot makeExercise(int id, SessionSetSnapshot child) =>
+        (SessionExerciseSnapshot.create(
+          id: id,
+          sessionId: 7,
+          nameSnapshot: 'Exercise $id',
+          orderIndex: id - 1,
+          plannedSets: 1,
+          plannedReps: (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
+          plannedLoad: LoadPrescription.bodyweight,
+          plannedRestSeconds: id == 1 ? 90 : 120,
+          supersetGroup: 0,
+          sets: [child],
+        ) as Ok<SessionExerciseSnapshot>).value;
+
+    return (ActiveSession.create(
+      id: 7,
+      workoutNameSnapshot: 'Superset',
+      startedAt: DateTime.utc(2026, 9, 26, 10),
+      timezone: 'UTC',
+      status: SessionStatus.running,
+      exercises: [
+        makeExercise(1, makeSet(10, 1, firstMemberComplete)),
+        makeExercise(2, makeSet(11, 2, false)),
+      ],
+    ) as Ok<ActiveSession>).value;
+  }
+
   ActiveSessionCubit buildCubit({
     FakeSessionRepository? sessions,
     FakeSettingsRepository? settings,
@@ -273,6 +312,40 @@ void main() {
 
     expect(sessions.completeCalls, 1);
     expect(sessions.completedCommands.single.rest, isNotNull);
+    expect(notifications.scheduleCalls, 1);
+    await cubit.close();
+  });
+
+  test(
+    'superset member completion waits for the final member before rest',
+    () async {
+      final notifications = FakeNotificationService();
+      final sessions = FakeSessionRepository()
+        ..watchSeedEvents.add(Ok(groupedSession(firstMemberComplete: false)));
+      final cubit = buildCubit(
+        sessions: sessions,
+        notifications: notifications,
+      );
+      await cubit.initialize();
+      await pumpEventQueue();
+
+      await cubit.completeSet(10);
+      expect(sessions.completedCommands.single.rest, isNull);
+      expect(notifications.scheduleCalls, 0);
+      await cubit.close();
+    },
+  );
+
+  test('superset final member starts rest with its own duration', () async {
+    final notifications = FakeNotificationService();
+    final sessions = FakeSessionRepository()
+      ..watchSeedEvents.add(Ok(groupedSession(firstMemberComplete: true)));
+    final cubit = buildCubit(sessions: sessions, notifications: notifications);
+    await cubit.initialize();
+    await pumpEventQueue();
+
+    await cubit.completeSet(11);
+    expect(sessions.completedCommands.single.rest?.durationSeconds, 120);
     expect(notifications.scheduleCalls, 1);
     await cubit.close();
   });

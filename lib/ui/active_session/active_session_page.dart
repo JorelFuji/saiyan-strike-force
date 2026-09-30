@@ -12,6 +12,7 @@ import '../core/widgets/rest_timer_ring.dart';
 import 'widgets/active_set_row.dart';
 import 'widgets/rest_timer_controls.dart';
 import 'widgets/add_exercise_sheet.dart';
+import 'superset_rounds.dart';
 
 void _popRoute(BuildContext context) {
   final router = GoRouter.maybeOf(context);
@@ -133,15 +134,7 @@ int? currentSetIdFor(ActiveSessionState state) {
   if (session == null) {
     return null;
   }
-  for (final exercise in session.exercises) {
-    for (final set in exercise.sets) {
-      if (set.completed) {
-        continue;
-      }
-      return set.id;
-    }
-  }
-  return null;
+  return nextSetInSupersetSession(session.exercises)?.id;
 }
 
 class _ReadyBody extends StatefulWidget {
@@ -346,6 +339,7 @@ class _ReadyBodyState extends State<_ReadyBody> {
                 final completedSets = exercise.sets
                     .where((s) => s.completed)
                     .length;
+                final groupLabel = supersetRoundLabel(exercises, exercise);
                 final selected = index == _selectedExerciseIndex;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
@@ -353,7 +347,8 @@ class _ReadyBodyState extends State<_ReadyBody> {
                     button: true,
                     selected: selected,
                     label:
-                        '${exercise.nameSnapshot}, $completedSets of ${exercise.sets.length} sets complete',
+                        '${exercise.nameSnapshot}, $completedSets of ${exercise.sets.length} sets complete'
+                        '${groupLabel == null ? '' : ', $groupLabel'}',
                     child: Ink(
                       decoration: BoxDecoration(
                         color: selected
@@ -381,7 +376,7 @@ class _ReadyBodyState extends State<_ReadyBody> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    exercise.nameSnapshot,
+                                    '${exercise.nameSnapshot}${groupLabel == null ? '' : ' · $groupLabel'}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodyLarge,

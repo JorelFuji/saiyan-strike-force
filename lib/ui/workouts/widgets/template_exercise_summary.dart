@@ -15,6 +15,8 @@ class TemplateExerciseSummary extends StatelessWidget {
     required this.onRemove,
     required this.onMoveEarlier,
     required this.onMoveLater,
+    required this.onGroupWithPrevious,
+    required this.onRemoveFromSuperset,
     this.enabled = true,
     super.key,
   });
@@ -27,6 +29,8 @@ class TemplateExerciseSummary extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onMoveEarlier;
   final VoidCallback onMoveLater;
+  final VoidCallback onGroupWithPrevious;
+  final VoidCallback onRemoveFromSuperset;
   final bool enabled;
 
   @override
@@ -34,6 +38,7 @@ class TemplateExerciseSummary extends StatelessWidget {
     final canMoveEarlier = index > 0;
     final canMoveLater = index < totalCount - 1;
     final subtitle = _summaryLine(exercise, massUnit);
+    final grouped = exercise.supersetGroup != null;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Padding(
@@ -60,10 +65,22 @@ class TemplateExerciseSummary extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
-                        Text(subtitle),
+                        Text(
+                          grouped
+                              ? 'Superset ${exercise.supersetGroup! + 1} · $subtitle'
+                              : subtitle,
+                        ),
                       ],
                     ),
                   ),
+                ),
+                _GroupAction(
+                  exerciseName: exercise.name,
+                  grouped: grouped,
+                  enabled: enabled && (grouped || index > 0),
+                  onPressed: grouped
+                      ? onRemoveFromSuperset
+                      : onGroupWithPrevious,
                 ),
               ],
             ),
@@ -106,6 +123,44 @@ class TemplateExerciseSummary extends StatelessWidget {
     final sets = '${exercise.plannedSets} sets';
     final rest = '${exercise.restSeconds}s rest';
     return '$sets · $reps · $load · $rest';
+  }
+}
+
+class _GroupAction extends StatelessWidget {
+  const _GroupAction({
+    required this.exerciseName,
+    required this.grouped,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final String exerciseName;
+  final bool grouped;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = grouped
+        ? 'Remove $exerciseName from superset'
+        : 'Superset $exerciseName with previous exercise';
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Tooltip(
+        message: grouped ? 'Remove from superset' : 'Superset with previous',
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: IconButton(
+            onPressed: enabled ? onPressed : null,
+            icon: Icon(grouped ? Icons.link_off : Icons.link),
+            tooltip: label,
+          ),
+        ),
+      ),
+    );
   }
 }
 

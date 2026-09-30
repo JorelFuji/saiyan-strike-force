@@ -25,9 +25,18 @@ Reusable workout definitions the user builds and edits. Templates are **mutable*
     ```
 
   - Rest duration in seconds (used by the in-session rest timer)
-  - Optional superset grouping — **P1**. v1 ships without supersets if it delays Active Session.
+  - Optional adjacent superset grouping. In the builder, an exercise can be
+    grouped only with the immediately preceding exercise through an explicit
+    action. Saves normalize groups to contiguous runs of two or more with
+    dense internal tokens; singleton and non-contiguous legacy values are
+    cleared on the next template save. Group numbers are implementation data,
+    not user-authored fields.
 - Reordering exercises within a template via long-press drag handle.
 
 Templates are **mutable definitions**. Sessions are **immutable-at-start snapshots** of the prescription. Editing a template after a session has started must not rewrite that session's planned values.
+
+Supersets are limited to adjacent template exercises. Circuits, non-adjacent
+membership, group-level rest configuration, and in-session grouping are out of
+scope.
 
 Canonical mass storage and unit rules: [data-model.md](../data-model.md).

@@ -123,8 +123,14 @@ void main() {
           'None',
           const NoLoad(),
           (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
+          supersetGroup: 4,
         ),
-        _exercise('Bodyweight', const BodyweightLoad(), const Amrap()),
+        _exercise(
+          'Bodyweight',
+          const BodyweightLoad(),
+          const Amrap(),
+          supersetGroup: 4,
+        ),
         _exercise(
           'Absolute',
           (LoadPrescription.absolute(10) as Ok<LoadPrescription>).value,
@@ -162,6 +168,10 @@ void main() {
         LoadType.targetRpe,
         LoadType.text,
       ]);
+      expect(read.exercises.take(2).map((exercise) => exercise.supersetGroup), [4, 4]);
+      final duplicate =
+          (await repository.duplicate(created.id) as Ok<WorkoutTemplate>).value;
+      expect(duplicate.exercises.take(2).map((exercise) => exercise.supersetGroup), [4, 4]);
       final archived =
           (await repository.archive(created.id) as Ok<WorkoutTemplate>).value;
       final archivedAgain =
@@ -330,12 +340,14 @@ TemplateExercise _exercise(
   String name,
   LoadPrescription load,
   RepPrescription reps,
+  {int? supersetGroup},
 ) => (TemplateExercise.create(
   name: name,
   plannedSets: 1,
   reps: reps,
-  load: load,
-  restSeconds: 0,
+    load: load,
+    restSeconds: 0,
+    supersetGroup: supersetGroup,
 ) as Ok<TemplateExercise>).value;
 
 WorkoutTemplateDraft _draft(String name, String exerciseName) {

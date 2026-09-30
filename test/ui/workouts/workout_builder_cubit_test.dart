@@ -122,6 +122,26 @@ void main() {
     await cubit.close();
   });
 
+  test('explicit grouping and removal normalize adjacent membership', () async {
+    final cubit = await createCubit();
+    cubit.addExercise(squat());
+    cubit.addExercise(squat());
+    final secondKey = cubit.state.exercises.last.key;
+
+    cubit.groupWithPrevious(secondKey);
+    expect(cubit.state.exercises.map((row) => row.exercise.supersetGroup), [
+      0,
+      0,
+    ]);
+
+    cubit.removeFromSuperset(secondKey);
+    expect(cubit.state.exercises.map((row) => row.exercise.supersetGroup), [
+      null,
+      null,
+    ]);
+    await cubit.close();
+  });
+
   test('save creates once and preserves archived metadata on edit', () async {
     final workouts = FakeWorkoutRepository(seed: [template(2)]);
     final cubit = await createCubit(workoutId: 2, workouts: workouts);

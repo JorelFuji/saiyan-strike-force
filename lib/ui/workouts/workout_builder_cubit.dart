@@ -7,6 +7,7 @@ import '../../domain/repositories/exercise_name_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/repositories/workout_repository.dart';
 import 'workout_builder_state.dart';
+import 'superset_grouping.dart' as grouping;
 
 final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
   WorkoutBuilderCubit({
@@ -125,10 +126,10 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     final key = _nextExerciseKey++;
     emit(
       state.copyWith(
-        exercises: [
+        exercises: grouping.normalizeSupersetRows([
           ...state.exercises,
           DraftExerciseRow(key: key, exercise: exercise),
-        ],
+        ]),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,
@@ -144,7 +145,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     updated[index] = DraftExerciseRow(key: key, exercise: exercise);
     emit(
       state.copyWith(
-        exercises: updated,
+        exercises: grouping.normalizeSupersetRows(updated),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,
@@ -156,7 +157,9 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     if (!state.phase.isEditable) return;
     emit(
       state.copyWith(
-        exercises: state.exercises.where((row) => row.key != key).toList(),
+        exercises: grouping.normalizeSupersetRows(
+          state.exercises.where((row) => row.key != key).toList(),
+        ),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,
@@ -194,7 +197,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     rows.insert(newIndex, row);
     emit(
       state.copyWith(
-        exercises: rows,
+        exercises: grouping.normalizeSupersetRows(rows),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,
@@ -208,10 +211,11 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
 
     final trimmedName = state.name.trim();
     final trimmedNotes = state.notes.trim();
+    final normalizedRows = grouping.normalizeSupersetRows(state.exercises);
     final draftResult = WorkoutTemplateDraft.create(
       name: trimmedName,
       notes: trimmedNotes.isEmpty ? null : trimmedNotes,
-      exercises: state.exerciseValues,
+      exercises: normalizedRows.map((row) => row.exercise).toList(),
     );
     if (draftResult case Err(:final failure)) {
       emit(
@@ -300,6 +304,20 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     }
   }
 
+  void groupWithPrevious(int key) {
+    if (!state.phase.isEditable) return;
+    final index = state.exercises.indexWhere((row) => row.key == key);
+    if (index <= 0) return;
+    _setExercises(grouping.groupWithPrevious(state.exercises, index));
+  }
+
+  void removeFromSuperset(int key) {
+    if (!state.phase.isEditable) return;
+    final index = state.exercises.indexWhere((row) => row.key == key);
+    if (index < 0) return;
+    _setExercises(grouping.removeFromSuperset(state.exercises, index));
+  }
+
   List<DraftExerciseRow> _rowsFromExercises(List<TemplateExercise> exercises) {
     return [
       for (final exercise in exercises)
@@ -314,7 +332,18 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     rows[second] = temp;
     emit(
       state.copyWith(
-        exercises: rows,
+        exercises: grouping.normalizeSupersetRows(rows),
+        isDirty: true,
+        clearValidationFailure: true,
+        clearSaveFailure: true,
+      ),
+    );
+  }
+
+  void _setExercises(List<DraftExerciseRow> exercises) {
+    emit(
+      state.copyWith(
+        exercises: grouping.normalizeSupersetRows(exercises),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,

@@ -246,6 +246,10 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                                   onMoveEarlier: () =>
                                       cubit.moveEarlier(row.key),
                                   onMoveLater: () => cubit.moveLater(row.key),
+                                  onGroupWithPrevious: () =>
+                                      cubit.groupWithPrevious(row.key),
+                                  onRemoveFromSuperset: () =>
+                                      cubit.removeFromSuperset(row.key),
                                   enabled: !state.isSaving,
                                 );
                               },
