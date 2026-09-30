@@ -53,10 +53,19 @@ Do not build dark mode first and invert it later. Design tokens must support dar
 |---|---|---|
 | `text.primary` | `#EDEAE6` | Primary text (warm-white) |
 | `text.secondary` | `#A8A29B` | Secondary/meta |
-| `text.disabled` | `#6B655F` | Disabled/placeholder |
+| `text.disabled` | `#6B655F` | Disabled/placeholder (Nord reference) |
 | `text.onAccent` | `#12181B` | Text on Frost-blue accents |
 
-**Light text** must be specified in the token file at implementation (dark-on-light equivalents of the above). Do not derive them by naively inverting the dark hexes. Contrast requirements in [accessibility.md](accessibility.md) apply to both themes.
+**Light text** (implemented in `lib/ui/core/theme/vulcan_theme.dart`):
+
+| Token | Hex | Role |
+|---|---|---|
+| `text.primary` | `#2E3440` | Primary text |
+| `text.secondary` | `#4C566A` | Secondary/meta |
+| `text.disabled` | `#5E6674` | Disabled/placeholder |
+| `text.onAccent` | `#FFFFFF` | Text on deep interactive primary (`#3B5B7F`) |
+
+Contrast requirements in [accessibility.md](accessibility.md) apply to both themes. Where a Nord reference hex fails 4.5:1 on its immediate background, the theme code uses a contrast-adjusted value and documents it in source (for example dark `text.disabled` → `#9A938C`, light interactive primary → `#3B5B7F` instead of Frost on Snow Storm). **`state.danger` (`#BF616A`)** remains the brand reference; **`ColorScheme.error`** (inline error text on surfaces) and **`VulcanColors.danger`** (destructive fills) use deeper reds defined in the theme files so paired foregrounds pass automated contrast tests.
 
 Accent-color picker is **out of v1**. The Nord palette is the visual identity. Theme setting is dark / light / system only.
 
@@ -78,6 +87,14 @@ Accent-color picker is **out of v1**. The Nord palette is the visual identity. T
 - Neumorphic shadow pairs at low opacity (~35–45%), blur 12–16px, offset 6–8px — soft, not deep-carved. Dense set rows are flat; they do not use neumorphic shadows.
 - Two elevation states per interactive neumorphic surface: **raised** (default) and **pressed/inset**. Pair with an accent border/focus ring so state does not depend on shadow perception.
 
+## Implementation
+
+Apply these tokens through Material 3 `ThemeData`, `ColorScheme`, component themes, and a `ThemeExtension` (for example `VulcanColors`). Flutter Material 3 widgets are the behavioral foundation (focus, semantics, text scaling, `NavigationBar`, buttons, fields, dialogs, snackbars).
+
+Selective neumorphism is custom — an owned `VulcanSurface` (and similar primitives under `lib/ui/core`), not a pub.dev neumorphic kit. Do **not** add `flutter_neumorphic*`, a general calendar package, or a form-builder. Week strip and month-dot grid are in-repo widgets using Flutter date helpers.
+
+Shadows and glows are not focus. Interactive state still uses an actual border and/or accent change on the component itself, as specified under Direction. Folder and package rules: [architecture.md](architecture.md) UI library.
+
 ## Motion
 
 Minimal, purposeful, tied to state changes:
@@ -97,7 +114,6 @@ Principle: in a strength-training app, accidental input is worse than one extra 
 | Tap | Everywhere | Primary action (including set complete) |
 | Long-press + drag | Workout builder exercise list; Planner (secondary) | Reorder exercises; drag a template onto a date |
 | Horizontal swipe | Planner week strip | Previous/next week |
-| Pull to refresh | History | Retry pending/failed Health jobs (not a data reload from a server) |
 | Edge swipe back | All pushed screens | OS-native back |
 
 **Removed from v1:** swipe-to-complete, swipe-to-delete on set rows, double-tap to edit, horizontal swipe between exercise cards as primary navigation.

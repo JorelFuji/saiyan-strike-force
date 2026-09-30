@@ -1,0 +1,547 @@
+CREATE TABLE app_metadata (
+  "key" TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE settings (
+  "key" TEXT NOT NULL PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE workout (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  notes TEXT,
+  created_at DATETIME NOT NULL,
+  archived_at DATETIME
+);
+
+CREATE TABLE workout_exercise (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  workout_id INTEGER NOT NULL REFERENCES workout (id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  normalized_name TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  planned_sets INTEGER NOT NULL,
+  rep_type TEXT NOT NULL,
+  target_reps INTEGER,
+  min_reps INTEGER,
+  max_reps INTEGER,
+  load_type TEXT NOT NULL,
+  weight_canonical_mg INTEGER,
+  percentage INTEGER,
+  target_rpe REAL,
+  freeform_text TEXT,
+  rest_seconds INTEGER NOT NULL,
+  superset_group INTEGER,
+  CONSTRAINT workout_exercise_order CHECK (order_index >= 0),
+  CONSTRAINT workout_exercise_planned_sets CHECK (planned_sets >= 1),
+  CONSTRAINT workout_exercise_rest CHECK (rest_seconds >= 0),
+  CONSTRAINT workout_exercise_superset CHECK (
+    superset_group IS NULL OR superset_group >= 0
+  ),
+  CONSTRAINT workout_exercise_rep_fields CHECK (
+    (
+      rep_type = 'fixed'
+      AND target_reps IS NOT NULL
+      AND target_reps >= 1
+      AND min_reps IS NULL
+      AND max_reps IS NULL
+    )
+    OR (
+      rep_type = 'range'
+      AND target_reps IS NULL
+      AND min_reps IS NOT NULL
+      AND max_reps IS NOT NULL
+      AND min_reps >= 1
+      AND max_reps >= min_reps
+    )
+    OR (
+      rep_type = 'amrap'
+      AND target_reps IS NULL
+      AND min_reps IS NULL
+      AND max_reps IS NULL
+    )
+  ),
+  CONSTRAINT workout_exercise_load_fields CHECK (
+    (
+      load_type = 'none'
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'bodyweight'
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'absolute'
+      AND weight_canonical_mg IS NOT NULL
+      AND weight_canonical_mg >= 0
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'percentage'
+      AND percentage IS NOT NULL
+      AND percentage >= 0
+      AND percentage <= 100
+      AND weight_canonical_mg IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'target_rpe'
+      AND target_rpe IS NOT NULL
+      AND target_rpe >= 0
+      AND target_rpe <= 10
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'text'
+      AND freeform_text IS NOT NULL
+      AND length(freeform_text) > 0
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+    )
+  )
+);
+
+CREATE UNIQUE INDEX workout_exercise_parent_order
+  ON workout_exercise (workout_id, order_index);
+
+CREATE INDEX workout_exercise_normalized_name
+  ON workout_exercise (normalized_name);
+
+CREATE TABLE schedule_entry (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  workout_id INTEGER NOT NULL REFERENCES workout (id) ON DELETE RESTRICT,
+  date TEXT NOT NULL,
+  start_time INTEGER,
+  label TEXT,
+  status TEXT NOT NULL,
+  session_id INTEGER REFERENCES session (id) ON DELETE RESTRICT,
+  FOREIGN KEY (session_id, id)
+    REFERENCES session (id, schedule_entry_id)
+    ON DELETE RESTRICT
+    DEFERRABLE INITIALLY DEFERRED,
+  CONSTRAINT schedule_entry_date CHECK (
+    date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]'
+    AND date(date) = date
+  ),
+  CONSTRAINT schedule_entry_start_time CHECK (
+    start_time IS NULL OR (start_time >= 0 AND start_time <= 1439)
+  ),
+  CONSTRAINT schedule_entry_status_session CHECK (
+    (status = 'planned' AND session_id IS NULL)
+    OR (status = 'skipped' AND session_id IS NULL)
+    OR (status = 'completed_by_session' AND session_id IS NOT NULL)
+  )
+);
+
+CREATE INDEX schedule_entry_date_status ON schedule_entry (date, status);
+
+CREATE INDEX schedule_entry_workout ON schedule_entry (workout_id);
+
+CREATE TABLE session (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  workout_id INTEGER REFERENCES workout (id) ON DELETE SET NULL,
+  schedule_entry_id INTEGER REFERENCES schedule_entry (id) ON DELETE SET NULL,
+  workout_name_snapshot TEXT NOT NULL,
+  started_at DATETIME NOT NULL,
+  ended_at DATETIME,
+  timezone TEXT NOT NULL,
+  status TEXT NOT NULL,
+  notes TEXT,
+  rest_started_at DATETIME,
+  rest_duration_seconds INTEGER,
+  rest_target_at DATETIME,
+  UNIQUE (id, schedule_entry_id),
+  CONSTRAINT session_timezone CHECK (length(timezone) > 0),
+  CONSTRAINT session_status CHECK (
+    status IN ('draft', 'running', 'paused', 'finished', 'abandoned')
+  ),
+  CONSTRAINT session_rest_group CHECK (
+    (
+      rest_started_at IS NULL
+      AND rest_duration_seconds IS NULL
+      AND rest_target_at IS NULL
+    )
+    OR (
+      rest_started_at IS NOT NULL
+      AND rest_duration_seconds IS NOT NULL
+      AND rest_duration_seconds >= 0
+      AND rest_target_at IS NOT NULL
+      AND rest_target_at = rest_started_at + rest_duration_seconds
+    )
+  )
+);
+
+CREATE INDEX session_workout ON session (workout_id);
+
+CREATE INDEX session_schedule_entry ON session (schedule_entry_id);
+
+CREATE INDEX session_chronology ON session (started_at);
+
+CREATE INDEX session_resume_status ON session (status)
+  WHERE status IN ('running', 'paused');
+
+-- A completed schedule entry can only be tied to the finished session that
+-- started from that exact entry. Cross-table constraints need triggers because
+-- SQLite CHECK expressions cannot contain subqueries.
+CREATE TRIGGER schedule_entry_completed_session_on_insert
+BEFORE INSERT ON schedule_entry
+WHEN NEW.status = 'completed_by_session'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM session
+    WHERE id = NEW.session_id
+      AND schedule_entry_id = NEW.id
+      AND workout_id = NEW.workout_id
+      AND status = 'finished'
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'completed schedule must reference its finished session');
+END;
+
+CREATE TRIGGER schedule_entry_completed_session_on_update
+BEFORE UPDATE OF status, session_id, workout_id ON schedule_entry
+WHEN NEW.status = 'completed_by_session'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM session
+    WHERE id = NEW.session_id
+      AND schedule_entry_id = NEW.id
+      AND workout_id = NEW.workout_id
+      AND status = 'finished'
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'completed schedule must reference its finished session');
+END;
+
+-- The deferred reciprocal foreign key protects schedule-link edits. This
+-- trigger keeps the linked session terminal and tied to the same workout.
+CREATE TRIGGER session_completed_schedule_status_on_update
+BEFORE UPDATE OF status, workout_id ON session
+WHEN EXISTS (
+  SELECT 1
+  FROM schedule_entry
+  WHERE session_id = OLD.id
+    AND status = 'completed_by_session'
+)
+  AND (
+    NEW.status <> 'finished'
+    OR NEW.workout_id IS NOT OLD.workout_id
+  )
+BEGIN
+  SELECT RAISE(ABORT, 'cannot invalidate completed schedule session link');
+END;
+
+CREATE TABLE session_exercise (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  session_id INTEGER NOT NULL REFERENCES session (id) ON DELETE CASCADE,
+  name_snapshot TEXT NOT NULL,
+  normalized_name TEXT NOT NULL,
+  order_index INTEGER NOT NULL,
+  planned_sets INTEGER NOT NULL,
+  planned_rep_type TEXT NOT NULL,
+  planned_target_reps INTEGER,
+  planned_min_reps INTEGER,
+  planned_max_reps INTEGER,
+  planned_load_type TEXT NOT NULL,
+  planned_weight_canonical_mg INTEGER,
+  planned_percentage INTEGER,
+  planned_target_rpe REAL,
+  planned_freeform_text TEXT,
+  planned_rest_seconds INTEGER NOT NULL,
+  superset_group INTEGER,
+  CONSTRAINT session_exercise_order CHECK (order_index >= 0),
+  CONSTRAINT session_exercise_planned_sets CHECK (planned_sets >= 1),
+  CONSTRAINT session_exercise_rest CHECK (planned_rest_seconds >= 0),
+  CONSTRAINT session_exercise_superset CHECK (
+    superset_group IS NULL OR superset_group >= 0
+  ),
+  CONSTRAINT session_exercise_rep_fields CHECK (
+    (
+      planned_rep_type = 'fixed'
+      AND planned_target_reps IS NOT NULL
+      AND planned_target_reps >= 1
+      AND planned_min_reps IS NULL
+      AND planned_max_reps IS NULL
+    )
+    OR (
+      planned_rep_type = 'range'
+      AND planned_target_reps IS NULL
+      AND planned_min_reps IS NOT NULL
+      AND planned_max_reps IS NOT NULL
+      AND planned_min_reps >= 1
+      AND planned_max_reps >= planned_min_reps
+    )
+    OR (
+      planned_rep_type = 'amrap'
+      AND planned_target_reps IS NULL
+      AND planned_min_reps IS NULL
+      AND planned_max_reps IS NULL
+    )
+  ),
+  CONSTRAINT session_exercise_load_fields CHECK (
+    (
+      planned_load_type = 'none'
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'bodyweight'
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'absolute'
+      AND planned_weight_canonical_mg IS NOT NULL
+      AND planned_weight_canonical_mg >= 0
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'percentage'
+      AND planned_percentage IS NOT NULL
+      AND planned_percentage >= 0
+      AND planned_percentage <= 100
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'target_rpe'
+      AND planned_target_rpe IS NOT NULL
+      AND planned_target_rpe >= 0
+      AND planned_target_rpe <= 10
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'text'
+      AND planned_freeform_text IS NOT NULL
+      AND length(planned_freeform_text) > 0
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+    )
+  )
+);
+
+CREATE UNIQUE INDEX session_exercise_parent_order
+  ON session_exercise (session_id, order_index);
+
+CREATE INDEX session_exercise_normalized_name
+  ON session_exercise (normalized_name);
+
+CREATE TABLE session_set (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  session_exercise_id INTEGER NOT NULL REFERENCES session_exercise (id)
+    ON DELETE CASCADE,
+  set_index INTEGER NOT NULL,
+  planned_rep_type TEXT NOT NULL,
+  planned_target_reps INTEGER,
+  planned_min_reps INTEGER,
+  planned_max_reps INTEGER,
+  planned_load_type TEXT NOT NULL,
+  planned_weight_canonical_mg INTEGER,
+  planned_percentage INTEGER,
+  planned_target_rpe REAL,
+  planned_freeform_text TEXT,
+  actual_rep_type TEXT,
+  actual_target_reps INTEGER,
+  actual_min_reps INTEGER,
+  actual_max_reps INTEGER,
+  actual_load_type TEXT,
+  actual_weight_canonical_mg INTEGER,
+  actual_percentage INTEGER,
+  actual_target_rpe REAL,
+  actual_freeform_text TEXT,
+  rpe REAL,
+  completed BOOLEAN NOT NULL,
+  completed_at DATETIME,
+  CONSTRAINT session_set_index CHECK (set_index >= 0),
+  CONSTRAINT session_set_rpe CHECK (rpe IS NULL OR (rpe >= 0 AND rpe <= 10)),
+  CONSTRAINT session_set_completion CHECK (
+    (completed = 0 AND completed_at IS NULL)
+    OR (completed = 1 AND completed_at IS NOT NULL)
+  ),
+  CONSTRAINT session_set_planned_rep_fields CHECK (
+    (
+      planned_rep_type = 'fixed'
+      AND planned_target_reps IS NOT NULL
+      AND planned_target_reps >= 1
+      AND planned_min_reps IS NULL
+      AND planned_max_reps IS NULL
+    )
+    OR (
+      planned_rep_type = 'range'
+      AND planned_target_reps IS NULL
+      AND planned_min_reps IS NOT NULL
+      AND planned_max_reps IS NOT NULL
+      AND planned_min_reps >= 1
+      AND planned_max_reps >= planned_min_reps
+    )
+    OR (
+      planned_rep_type = 'amrap'
+      AND planned_target_reps IS NULL
+      AND planned_min_reps IS NULL
+      AND planned_max_reps IS NULL
+    )
+  ),
+  CONSTRAINT session_set_planned_load_fields CHECK (
+    (
+      planned_load_type = 'none'
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'bodyweight'
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'absolute'
+      AND planned_weight_canonical_mg IS NOT NULL
+      AND planned_weight_canonical_mg >= 0
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'percentage'
+      AND planned_percentage IS NOT NULL
+      AND planned_percentage >= 0
+      AND planned_percentage <= 100
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_target_rpe IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'target_rpe'
+      AND planned_target_rpe IS NOT NULL
+      AND planned_target_rpe >= 0
+      AND planned_target_rpe <= 10
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_freeform_text IS NULL
+    )
+    OR (
+      planned_load_type = 'text'
+      AND planned_freeform_text IS NOT NULL
+      AND length(planned_freeform_text) > 0
+      AND planned_weight_canonical_mg IS NULL
+      AND planned_percentage IS NULL
+      AND planned_target_rpe IS NULL
+    )
+  ),
+  CONSTRAINT session_set_actual_rep_fields CHECK (
+    (
+      actual_rep_type IS NULL
+      AND actual_target_reps IS NULL
+      AND actual_min_reps IS NULL
+      AND actual_max_reps IS NULL
+    )
+    OR (
+      actual_rep_type = 'fixed'
+      AND actual_target_reps IS NOT NULL
+      AND actual_target_reps >= 1
+      AND actual_min_reps IS NULL
+      AND actual_max_reps IS NULL
+    )
+    OR (
+      actual_rep_type = 'range'
+      AND actual_target_reps IS NULL
+      AND actual_min_reps IS NOT NULL
+      AND actual_max_reps IS NOT NULL
+      AND actual_min_reps >= 1
+      AND actual_max_reps >= actual_min_reps
+    )
+    OR (
+      actual_rep_type = 'amrap'
+      AND actual_target_reps IS NULL
+      AND actual_min_reps IS NULL
+      AND actual_max_reps IS NULL
+    )
+  ),
+  CONSTRAINT session_set_actual_load_fields CHECK (
+    (
+      actual_load_type IS NULL
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_percentage IS NULL
+      AND actual_target_rpe IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'none'
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_percentage IS NULL
+      AND actual_target_rpe IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'bodyweight'
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_percentage IS NULL
+      AND actual_target_rpe IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'absolute'
+      AND actual_weight_canonical_mg IS NOT NULL
+      AND actual_weight_canonical_mg >= 0
+      AND actual_percentage IS NULL
+      AND actual_target_rpe IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'percentage'
+      AND actual_percentage IS NOT NULL
+      AND actual_percentage >= 0
+      AND actual_percentage <= 100
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_target_rpe IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'target_rpe'
+      AND actual_target_rpe IS NOT NULL
+      AND actual_target_rpe >= 0
+      AND actual_target_rpe <= 10
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_percentage IS NULL
+      AND actual_freeform_text IS NULL
+    )
+    OR (
+      actual_load_type = 'text'
+      AND actual_freeform_text IS NOT NULL
+      AND length(actual_freeform_text) > 0
+      AND actual_weight_canonical_mg IS NULL
+      AND actual_percentage IS NULL
+      AND actual_target_rpe IS NULL
+    )
+  )
+);
+
+CREATE UNIQUE INDEX session_set_parent_order
+  ON session_set (session_exercise_id, set_index);

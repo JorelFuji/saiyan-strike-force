@@ -4,9 +4,19 @@ import XCTest
 
 class RunnerTests: XCTestCase {
 
-  func testExample() {
-    // If you add code to the Runner application, consider adding tests here.
-    // See https://developer.apple.com/documentation/xctest for more information about using XCTest.
+  func testDirectoryCanBeExcludedFromBackup() throws {
+    let directory = FileManager.default.temporaryDirectory
+      .appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    defer { try? FileManager.default.removeItem(at: directory) }
+
+    var values = URLResourceValues()
+    values.isExcludedFromBackup = true
+    var protectedDirectory = directory
+    try protectedDirectory.setResourceValues(values)
+
+    let result = try directory.resourceValues(forKeys: [.isExcludedFromBackupKey])
+    XCTAssertEqual(result.isExcludedFromBackup, true)
   }
 
 }

@@ -1,6 +1,6 @@
 {
-    "name": "vulcan",
-    "short_name": "vulcan",
+    "name": "vulcan_fitness",
+    "short_name": "vulcan_fitness",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

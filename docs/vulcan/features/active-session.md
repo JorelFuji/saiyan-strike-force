@@ -2,7 +2,7 @@
 
 Starting and running a workout — the highest-frequency product surface. Accidental input is worse than one extra tap.
 
-Contracts: [invariants.md](../invariants.md). Schema detail: [data-model.md](../data-model.md). Gestures: [design.md](../design.md). Health enqueue on finish: [health.md](health.md).
+Contracts: [invariants.md](../invariants.md). Schema detail: [data-model.md](../data-model.md). Gestures: [design.md](../design.md). Stack, rest-timer packages, and startup: [architecture.md](../architecture.md).
 
 ---
 
@@ -32,11 +32,11 @@ A session autosaves continuously (after every completed set, every field edit, e
 - app termination
 - OS suspension
 - phone lock
-- notification interaction
+- notification interaction (rest-timer OS notification tap: same bootstrap as launch — shell first, then push Active Session if a `running` / `paused` session exists; never start a second session)
 - process death
 - temporary database/write failure
 
-On launch, if a `running` or `paused` session exists, resume it.
+On launch, if a `running` or `paused` session exists, resume it. Notification tap is the same path: bootstrap → mount the tab shell → push Active Session with that session id. `ActiveSessionCubit` is created on the route and hydrates; it does not call `StartSession`.
 
 ## Template → session snapshot
 
@@ -80,7 +80,7 @@ session_set
   completed_at              nullable
 ```
 
-Do not introduce a general-purpose `template_version` table in v1. The session snapshot *is* the version. A session may add/remove sets and exercises without mutating the template (invariant 8).
+Do not introduce a general-purpose `template_version` table in v1. The session snapshot *is* the version. A session may add/remove sets and exercises without mutating the template (invariant 6).
 
 ## Active Session interaction (tap-first)
 
@@ -113,7 +113,7 @@ Also:
 - Add an extra set on the fly, or remove one via menu.
 - Add an exercise on the fly (session diverges from template; template unchanged).
 - Live elapsed session timer from `started_at`.
-- Finish → Session Summary (total volume, duration, sets/reps completed vs. planned, Health sync state) → local save is already done; Health enqueue is best-effort.
+- Finish → Session Summary (total volume, duration, sets/reps completed vs. planned) → local save is already done.
 
 ## Rest timer
 
@@ -127,9 +127,23 @@ rest_duration_seconds
 rest_target_at          # started_at + duration
 ```
 
-Remaining time = `rest_target_at - now`. This recovers correctly after lock, backgrounding, suspension, and notification handling.
+Remaining time = `rest_target_at - now`. This recovers correctly after lock, backgrounding, suspension, and notification handling. Remaining / overdue time never comes from the notification payload; the notification is not a second clock.
 
 The timer is **not modal**. The user can keep logging while it runs.
+
+The rest timer **must** alert when the app is backgrounded or terminated. Package names (`flutter_local_notifications`, `timezone`, `flutter_timezone`) live in [architecture.md](../architecture.md); do not treat that table as duplicated here.
+
+**Arming.** When rest starts (including auto-start), persist `rest_*` **then** schedule an OS local notification for `rest_target_at`. When rest starts because a set completed (or another rest-field change shares a user action with a set/session write), those rest fields and the triggering write are **one repository transaction**, then the pending notification is scheduled or updated. Capture the IANA zone at session start and schedule with zoned APIs.
+
+**Cancel / reschedule.** Skip, ±30s, reset, auto-start, complete set, pause, finish, and abandon **must** update both DB rest fields and the pending notification. Cancel the OS notification when rest is no longer armed.
+
+**Foreground policy (kill-safe).** While rest is armed, **keep the OS notification scheduled**. While the app is in the foreground, **suppress presentation** so the user is not double-alerted. Do **not** cancel the scheduled notification merely because the app is foregrounded — unexpected process death from the foreground will not reliably run a “reschedule on background” callback. A terminated app relies on the already-scheduled OS notification.
+
+**Notification tap.** Cold start or resume follows the same path as startup: bootstrap (migrations, then resume query) → mount the tab shell → if a `running` / `paused` session exists, push Active Session with that session id. Never start a second session.
+
+**Permission.** Request notification permission at the first rest that needs an alert, or from Settings. Denial degrades to the in-app timer only and **must not** fail set persistence or block logging.
+
+**Privacy.** Title and body must not include exercise names, loads, notes, or other workout detail. Payload carries at most a stable session id.
 
 Controls:
 - Auto-start after a completed set (Settings toggle; default on)

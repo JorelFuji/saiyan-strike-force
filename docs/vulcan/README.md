@@ -6,7 +6,7 @@
 **Date:** September 10, 2026
 **Status:** Implementation-ready for data model and Active Session; UI build starts after those are in place
 
-This revision incorporates a product-spec review. Positioning, core loop, information architecture, visual direction, local-first stance, and Cubit/`flutter_bloc` + MVVM are unchanged. The data model, session lifecycle, Active Session interaction, Health pipeline, units, accessibility, and v1 scope are now explicit.
+This revision incorporates a product-spec review. Positioning, core loop, information architecture, visual direction, local-first stance, and Cubit/`flutter_bloc` + MVVM are unchanged. The data model, session lifecycle, Active Session interaction, units, accessibility, and v1 scope are now explicit. On 2026-09-17 the package baseline, target folders, constructor-injection DI, and UI-library decision were revised in [architecture.md](architecture.md); product non-goals are unchanged.
 
 ---
 
@@ -22,24 +22,18 @@ Vulcan Fitness is a Flutter strength-training app for lifters who already know h
 - No web or desktop client
 - No cloud backup or cross-device sync
 - No import of exported files
-- No estimated calorie writes to Health
+- No Apple HealthKit or Google Health Connect integration
 - No accent-color customization
 - No analytics dashboard / multiple chart types
 - No wearable-specific experiences
-
-### In-scope integrations
-- Apple HealthKit — write a strength-training workout and duration; heart rate only if a real source exists. Contextual authorization, not at launch.
-- Google Health Connect — same write-only contract via `ExerciseSessionRecord`. Health Connect is available on Android 9+ with Google Play services; on Android 14+ it is part of the system, on Android 13 and below it is a separately installed app.
-
-See [features/health.md](features/health.md) for the full Health write contract and outbox.
 
 ---
 
 ## Target User
 
 **Persona: "The Self-Coached Lifter"**
-Trains 3–6x/week on a structured strength program (e.g., 5/3/1, a block periodization cycle, a powerlifting peaking plan) that they've written themselves or copied from a coach into their own words. They think in terms of sets, reps, load, and weekly/monthly structure — not "browse chest exercises." They want:
-- To build a workout in under a minute, using their own exercise names and notation
+Trains 3–6x/week on a structured strength program (e.g., 5/3/1, a block periodization cycle, a powerlifting peaking plan) that they've written themselves or copied from a coach into their own words. They think in terms of sets, reps, load, perceived exertion (RPE), and weekly/monthly structure — not "browse chest exercises." They want:
+- To build a workout in under 5 minutes, using their own exercise names and notation
 - To log a session fast, mid-set, without fumbling the UI — often one-handed, sweaty, looking away from the device
 - To look back at a lift's history at a glance ("what did I do last time?")
 - Accessibility: OS text scaling through the largest Dynamic Type / Android font-scale steps, contrast that meets WCAG, VoiceOver/TalkBack, Reduce Motion, bold text, and high-contrast settings where the OS supports them
@@ -58,8 +52,8 @@ PLAN → SCHEDULE → PERFORM → REVIEW
 
 1. **Plan** — Build reusable Workout templates (e.g., "Squat Day A") with exercises, target sets/reps/load, and rest.
 2. **Schedule** — Place those workouts onto a week calendar (month is a lightweight overview), unlimited workouts, unlimited scheduling.
-3. **Perform** — Start a session (from the plan, or ad hoc), log actual sets/reps/weight/RPE as you go, with a rest timer that is not modal.
-4. **Review** — See history per exercise first, then per session; optionally sync to Apple Health / Google Health Connect.
+3. **Perform** — Start a session (from the plan, or ad hoc), log actual sets/reps/weight/RPE as you go, with a rest timer that is not modal. Have a total time from start to finish.
+4. **Review** — See history per exercise first, then per session.
 
 Every major feature maps to one of those four jobs. Preserve that.
 
@@ -101,28 +95,9 @@ Full screen list: [screens.md](screens.md).
 | [features/planner.md](features/planner.md) | Week/month scheduling |
 | [features/active-session.md](features/active-session.md) | Session lifecycle, snapshot, logging UI, rest timer |
 | [features/history.md](features/history.md) | Session list and exercise progression |
-| [features/health.md](features/health.md) | HealthKit / Health Connect write pipeline |
 | [features/privacy-export.md](features/privacy-export.md) | Local-first data and export |
 | [design.md](design.md) | Visual language, tokens, motion, gestures |
 | [accessibility.md](accessibility.md) | Contrast, scaling, assistive tech |
 | [architecture.md](architecture.md) | Flutter stack, MVVM, folder layout |
 | [data-model.md](data-model.md) | SQLite schema, units, encryption |
 | [roadmap.md](roadmap.md) | P0/P1/P2, deferred work, closed decisions |
-
-### Agent load map
-
-Agents should open the matching **skill** first (hard rules + paths), then the deep product doc.
-
-| Task | Skill | Deep detail |
-|------|------|------|
-| Always-on baseline | root `AGENTS.md` / `CLAUDE.md` | — |
-| Stack / folders / Cubit | `.claude/skills/flutter-conventions/SKILL.md` | `architecture.md` |
-| Schema / units / crypto | `.claude/skills/local-data-and-units/SKILL.md` | `data-model.md` |
-| Session reliability / logging | `.claude/skills/active-session/SKILL.md` | `invariants.md`, `features/active-session.md` |
-| Health sync | `.claude/skills/health-sync/SKILL.md` | `features/health.md` |
-| Templates / Workouts | `.claude/skills/templates-and-workouts/SKILL.md` | `features/templates.md` |
-| Planner / calendar | `.claude/skills/planner/SKILL.md` | `features/planner.md` |
-| History / last time | `.claude/skills/history/SKILL.md` | `features/history.md` |
-| Privacy / export | `.claude/skills/privacy-export/SKILL.md` | `features/privacy-export.md` |
-| UI / theme / a11y | `.claude/skills/ui-design-a11y/SKILL.md` | `design.md`, `accessibility.md` |
-| Product intent / scope | — | `docs/vulcan/README.md`, `roadmap.md` |

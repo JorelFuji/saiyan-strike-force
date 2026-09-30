@@ -2,7 +2,7 @@
 
 Session and exercise history. The primary question is **"what did I do last time?"**, not "how did my volume trend over six months?"
 
-Related: [active-session.md](active-session.md) (snapshots), [health.md](health.md) (pull-to-refresh retries sync jobs only).
+Related: [active-session.md](active-session.md) (snapshots).
 
 ---
 
