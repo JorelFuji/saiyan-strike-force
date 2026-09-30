@@ -3,29 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../../../domain/models/active_session.dart';
 import '../../../domain/models/mass.dart';
-import '../../../domain/models/prescriptions.dart';
+import '../../core/formatters/load_formatter.dart';
 import '../set_draft.dart';
 import '../active_session_state.dart';
 import 'set_value_editor.dart';
-
-String formatCommittedLoad(LoadPrescription load, MassUnit unit) {
-  return switch (load) {
-    NoLoad() => 'No load',
-    BodyweightLoad() => 'Bodyweight',
-    AbsoluteLoad(:final milligrams) =>
-      '${SetDraft.formatAbsoluteMass(milligrams, unit)} ${unit.wireValue}',
-    PercentageLoad(:final percentage) => '$percentage%',
-    TargetRpeLoad(:final rpe) =>
-      'RPE ${rpe == rpe.roundToDouble() ? rpe.toInt() : rpe}',
-    TextLoad(:final text) => text,
-  };
-}
-
-String formatCommittedReps(RepPrescription reps) => switch (reps) {
-  FixedReps(:final reps) => '$reps',
-  RepRange(:final min, :final max) => '$min–$max',
-  Amrap() => 'AMRAP',
-};
 
 /// One set row with tap-first editors, explicit completion, and commit-first UI.
 class ActiveSetRow extends StatefulWidget {

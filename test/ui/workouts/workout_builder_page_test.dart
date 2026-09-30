@@ -247,4 +247,34 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('New workout'), findsOneWidget);
   });
+
+  testWidgets('disables all exercise reordering controls while saving', (
+    tester,
+  ) async {
+    final workouts = FakeWorkoutRepository()
+      ..createDelay = const Duration(milliseconds: 100);
+    final cubit = await pumpBuilder(tester, workouts: workouts);
+    cubit.addExercise(exercise('Squat'));
+    await tester.pump();
+    await tester.enterText(
+      find.byKey(const Key('workout_builder_name')),
+      'Leg day',
+    );
+
+    await tester.tap(find.text('Save workout'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1));
+
+    expect(cubit.state.isSaving, isTrue);
+    expect(find.byType(ReorderableDelayedDragStartListener), findsNothing);
+    final moveLater = tester.widget<TextButton>(
+      _exerciseAction('Squat', 'Move later'),
+    );
+    expect(moveLater.onPressed, isNull);
+    expect(
+      tester.widget<BackButton>(find.byType(BackButton)).onPressed,
+      isNull,
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+  });
 }

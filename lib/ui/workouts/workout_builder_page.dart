@@ -52,6 +52,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     BuildContext context,
     WorkoutBuilderState state,
   ) async {
+    if (state.isSaving) return;
     if (!state.isDirty) {
       if (context.mounted) Navigator.of(context).pop();
       return;
@@ -111,7 +112,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
         final cubit = context.read<WorkoutBuilderCubit>();
         final title = state.isCreate ? 'New workout' : 'Edit workout';
         return PopScope(
-          canPop: !state.isDirty,
+          canPop: !state.isDirty && !state.isSaving,
           onPopInvokedWithResult: (didPop, result) async {
             if (didPop) return;
             await _handlePop(context, state);
@@ -119,7 +120,11 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
           child: Scaffold(
             appBar: AppBar(
               title: Text(title),
-              leading: BackButton(onPressed: () => _handlePop(context, state)),
+              leading: BackButton(
+                onPressed: state.isSaving
+                    ? null
+                    : () => _handlePop(context, state),
+              ),
             ),
             body: switch (state.phase) {
               WorkoutBuilderPhase.initial || WorkoutBuilderPhase.loading =>
@@ -184,10 +189,13 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                           ],
                           if (state.validationFailureMessage != null) ...[
                             const SizedBox(height: 12),
-                            Text(
-                              state.validationFailureMessage!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                state.validationFailureMessage!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
                               ),
                             ),
                           ],
@@ -206,6 +214,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                             ReorderableListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
+                              buildDefaultDragHandles: false,
                               onReorderItem: cubit.reorder,
                               itemCount: state.exercises.length,
                               itemBuilder: (context, index) {
@@ -237,6 +246,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                                   onMoveEarlier: () =>
                                       cubit.moveEarlier(row.key),
                                   onMoveLater: () => cubit.moveLater(row.key),
+                                  enabled: !state.isSaving,
                                 );
                               },
                             ),

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/models/active_session.dart';
 import '../../domain/models/mass.dart';
 import '../../domain/models/prescriptions.dart';
-import '../active_session/widgets/active_set_row.dart';
+import '../core/formatters/load_formatter.dart';
 import 'session_detail_cubit.dart';
 import 'session_detail_state.dart';
 import 'widgets/history_session_tile.dart';

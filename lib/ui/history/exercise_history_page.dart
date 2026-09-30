@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/models/exercise_history.dart';
 import '../../domain/models/mass.dart';
-import '../active_session/widgets/active_set_row.dart';
+import '../core/formatters/load_formatter.dart';
 import 'exercise_history_cubit.dart';
 import 'exercise_history_state.dart';
 import 'widgets/history_session_tile.dart';

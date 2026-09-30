@@ -77,4 +77,21 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Push'), findsOneWidget);
   });
+
+  testWidgets('offers labeled create actions in the app bar and empty state', (
+    tester,
+  ) async {
+    await pumpPage(tester, FakeWorkoutRepository());
+
+    expect(find.text('New workout'), findsOneWidget);
+    expect(find.text('Create workout'), findsOneWidget);
+    final appBarTarget = tester.getSize(
+      find.widgetWithText(TextButton, 'New workout'),
+    );
+    expect(appBarTarget.height, greaterThanOrEqualTo(48));
+    final target = tester.getSize(
+      find.widgetWithText(FilledButton, 'Create workout'),
+    );
+    expect(target.height, greaterThanOrEqualTo(48));
+  });
 }

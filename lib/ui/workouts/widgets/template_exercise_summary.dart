@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/models/mass.dart';
 import '../../../domain/models/workout_template.dart';
-import '../../active_session/widgets/active_set_row.dart';
+import '../../core/formatters/load_formatter.dart';
 
 /// Accessible summary row for one draft exercise with reorder and edit controls.
 class TemplateExerciseSummary extends StatelessWidget {
@@ -15,6 +15,7 @@ class TemplateExerciseSummary extends StatelessWidget {
     required this.onRemove,
     required this.onMoveEarlier,
     required this.onMoveLater,
+    this.enabled = true,
     super.key,
   });
 
@@ -26,6 +27,7 @@ class TemplateExerciseSummary extends StatelessWidget {
   final VoidCallback onRemove;
   final VoidCallback onMoveEarlier;
   final VoidCallback onMoveLater;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -42,19 +44,10 @@ class TemplateExerciseSummary extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ReorderableDelayedDragStartListener(
+                _DragHandle(
                   index: index,
-                  child: Semantics(
-                    label: 'Drag to reorder ${exercise.name}',
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: Icon(
-                        Icons.drag_handle,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+                  exerciseName: exercise.name,
+                  enabled: enabled,
                 ),
                 Expanded(
                   child: Padding(
@@ -81,22 +74,22 @@ class TemplateExerciseSummary extends StatelessWidget {
               children: [
                 _ActionChip(
                   label: 'Edit ${exercise.name}',
-                  onPressed: onEdit,
+                  onPressed: enabled ? onEdit : null,
                   child: const Text('Edit'),
                 ),
                 _ActionChip(
                   label: 'Remove ${exercise.name}',
-                  onPressed: onRemove,
+                  onPressed: enabled ? onRemove : null,
                   child: const Text('Remove'),
                 ),
                 _ActionChip(
                   label: 'Move ${exercise.name} earlier',
-                  onPressed: canMoveEarlier ? onMoveEarlier : null,
+                  onPressed: enabled && canMoveEarlier ? onMoveEarlier : null,
                   child: const Text('Move earlier'),
                 ),
                 _ActionChip(
                   label: 'Move ${exercise.name} later',
-                  onPressed: canMoveLater ? onMoveLater : null,
+                  onPressed: enabled && canMoveLater ? onMoveLater : null,
                   child: const Text('Move later'),
                 ),
               ],
@@ -113,6 +106,39 @@ class TemplateExerciseSummary extends StatelessWidget {
     final sets = '${exercise.plannedSets} sets';
     final rest = '${exercise.restSeconds}s rest';
     return '$sets · $reps · $load · $rest';
+  }
+}
+
+class _DragHandle extends StatelessWidget {
+  const _DragHandle({
+    required this.index,
+    required this.exerciseName,
+    required this.enabled,
+  });
+
+  final int index;
+  final String exerciseName;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final handle = Semantics(
+      label: enabled
+          ? 'Drag to reorder $exerciseName'
+          : 'Reordering $exerciseName is unavailable while saving',
+      enabled: enabled,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Icon(
+          Icons.drag_handle,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+    return enabled
+        ? ReorderableDelayedDragStartListener(index: index, child: handle)
+        : handle;
   }
 }
 

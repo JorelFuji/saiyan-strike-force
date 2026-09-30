@@ -3,6 +3,7 @@ import '../../core/result.dart';
 import '../../domain/models/active_session.dart';
 import '../../domain/models/mass.dart';
 import '../../domain/models/prescriptions.dart';
+import '../core/formatters/load_formatter.dart';
 
 /// UI-only raw field values for one session set row.
 final class SetDraft {
@@ -89,15 +90,6 @@ final class SetDraft {
     FixedReps(:final reps) => '$reps',
     RepRange() || Amrap() => throw StateError('Actual reps must be fixed.'),
   };
-
-  static String formatAbsoluteMass(int milligrams, MassUnit unit) {
-    final display = displayMass(milligrams, unit);
-    if (display == display.roundToDouble()) {
-      return display.toInt().toString();
-    }
-    final text = display.toString();
-    return text.contains('.') ? text.replaceAll(RegExp(r'\.?0+$'), '') : text;
-  }
 
   static String _formatRpe(double rpe) {
     if (rpe == rpe.roundToDouble()) {

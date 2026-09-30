@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vulcan_fitness/core/clock.dart';
 import 'package:vulcan_fitness/core/failure.dart';
@@ -252,6 +253,76 @@ void main() {
     )..where((row) => row.sessionId.equals(sessionId))).get();
     expect(session.workoutId, isNull);
     expect(snapshots, hasLength(1));
+  });
+
+  test('updating a template never rewrites session snapshot rows', () async {
+    final created = (await repository.create(
+      _draft('Snapshot source', 'Bench'),
+    ) as Ok<WorkoutTemplate>).value;
+    final archived =
+        (await repository.archive(created.id) as Ok<WorkoutTemplate>).value;
+    final sessionId = await insertSession(
+      database,
+      workoutId: created.id,
+      status: 'finished',
+    );
+    final sessionExerciseId = await insertSessionExercise(
+      database,
+      sessionId: sessionId,
+      nameSnapshot: 'Bench snapshot',
+    );
+    await insertSet(
+      database,
+      sessionExerciseId: sessionExerciseId,
+      completed: true,
+      completedAt: now,
+    );
+    final sessionsBefore = await database.select(database.session).get();
+    final exercisesBefore = await database
+        .select(database.sessionExercise)
+        .get();
+    final setsBefore = await database.select(database.sessionSet).get();
+    final replacement = _exercise(
+      'Row',
+      const BodyweightLoad(),
+      (RepPrescription.fixed(10) as Ok<RepPrescription>).value,
+    );
+    final second = _exercise(
+      'Press',
+      const NoLoad(),
+      (RepPrescription.range(6, 8) as Ok<RepPrescription>).value,
+    );
+
+    final updated = (await repository.update(
+      (WorkoutTemplate.create(
+        id: archived.id,
+        name: 'Snapshot source revised',
+        notes: 'reordered',
+        createdAt: archived.createdAt,
+        archivedAt: archived.archivedAt,
+        exercises: [replacement, second],
+      ) as Ok<WorkoutTemplate>).value,
+    ) as Ok<WorkoutTemplate>).value;
+
+    expect(updated.id, created.id);
+    expect(updated.createdAt, created.createdAt);
+    expect(updated.archivedAt, archived.archivedAt);
+    expect(updated.exercises.map((exercise) => exercise.name), [
+      'Row',
+      'Press',
+    ]);
+    expect(await database.select(database.session).get(), sessionsBefore);
+    expect(
+      await database.select(database.sessionExercise).get(),
+      exercisesBefore,
+    );
+    expect(await database.select(database.sessionSet).get(), setsBefore);
+    final templateRows =
+        await (database.select(database.workoutExercise)
+              ..where((row) => row.workoutId.equals(created.id))
+              ..orderBy([(row) => OrderingTerm.asc(row.orderIndex)]))
+            .get();
+    expect(templateRows.map((row) => row.orderIndex), [0, 1]);
   });
 }
 

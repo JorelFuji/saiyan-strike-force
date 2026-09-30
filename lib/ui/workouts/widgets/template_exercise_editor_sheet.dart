@@ -5,7 +5,7 @@ import '../../../domain/models/exercise_name.dart';
 import '../../../domain/models/mass.dart';
 import '../../../domain/models/prescriptions.dart';
 import '../../../domain/models/workout_template.dart';
-import '../../active_session/set_draft.dart';
+import '../../core/formatters/load_formatter.dart';
 
 /// Opens the template exercise editor and returns a validated [TemplateExercise].
 Future<TemplateExercise?> showTemplateExerciseEditorSheet(
@@ -106,10 +106,7 @@ class _TemplateExerciseEditorSheetState
 
   String _seedLoadText(LoadPrescription load, MassUnit unit) => switch (load) {
     NoLoad() || BodyweightLoad() => '',
-    AbsoluteLoad(:final milligrams) => SetDraft.formatAbsoluteMass(
-      milligrams,
-      unit,
-    ),
+    AbsoluteLoad(:final milligrams) => formatAbsoluteMass(milligrams, unit),
     PercentageLoad(:final percentage) => '$percentage',
     TargetRpeLoad(:final rpe) =>
       rpe == rpe.roundToDouble() ? '${rpe.toInt()}' : rpe.toString(),
@@ -117,12 +114,12 @@ class _TemplateExerciseEditorSheetState
   };
 
   Iterable<String> _nameOptions(TextEditingValue value) {
-    final query = value.text.trim().toLowerCase();
+    final query = normalizeExerciseName(value.text);
     if (query.isEmpty) {
       return widget.suggestions.map((s) => s.display);
     }
     return widget.suggestions
-        .where((s) => s.display.toLowerCase().contains(query))
+        .where((s) => s.normalized.contains(query))
         .map((s) => s.display);
   }
 
@@ -205,16 +202,14 @@ class _TemplateExerciseEditorSheetState
   @override
   Widget build(BuildContext context) {
     final title = widget.initial == null ? 'Add exercise' : 'Edit exercise';
+    final media = MediaQuery.of(context);
     return SizedBox(
-      // Keep the action in view on compact/landscape screens; fields scroll.
-      height: MediaQuery.sizeOf(context).height * 0.55,
+      // Leave room for the keyboard while retaining a scrollable editor.
+      height: (media.size.height - media.viewInsets.bottom)
+          .clamp(0.0, double.infinity)
+          .toDouble(),
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          24,
-          20,
-          24,
-          24 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
+        padding: EdgeInsets.fromLTRB(24, 20, 24, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

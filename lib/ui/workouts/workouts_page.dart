@@ -35,10 +35,14 @@ class WorkoutsPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Workouts'),
             actions: [
-              IconButton(
-                tooltip: 'New workout',
-                onPressed: () => context.push('/workouts/new'),
-                icon: const Icon(Icons.add),
+              Semantics(
+                button: true,
+                label: 'Create workout',
+                child: TextButton.icon(
+                  onPressed: () => context.push('/workouts/new'),
+                  icon: const Icon(Icons.add),
+                  label: const Text('New workout'),
+                ),
               ),
             ],
           ),
@@ -119,7 +123,24 @@ class _WorkoutListBody extends StatelessWidget {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(message, textAlign: TextAlign.center),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              if (!hasItemsForFilter &&
+                  state.filter == WorkoutListFilter.active) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: () => context.push('/workouts/new'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create workout'),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
