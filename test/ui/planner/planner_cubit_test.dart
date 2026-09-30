@@ -71,6 +71,7 @@ void main() {
       timezoneService: timezones ?? FakeTimezoneService(),
       clock: clock,
       initialWeekStart: weekStart,
+      firstDayOfWeekIndex: 1,
       initialSelectedDate: selected ?? expectedToday(),
     );
   }
@@ -85,7 +86,7 @@ void main() {
       await pumpEventQueue();
       expect(schedules.watchCalls, 1);
       expect(cubit.state.loadPhase, PlannerLoadPhase.ready);
-      expect(cubit.state.weekEntries, hasLength(1));
+      expect(cubit.state.visibleRangeEntries, hasLength(1));
       expect(schedules.lastEndExclusive, weekStart.addDays(7));
 
       cubit.goToNextWeek();
@@ -198,7 +199,7 @@ void main() {
       await cubit.startEntry(1);
       expect(cubit.state.startedSessionId, 77);
       expect(sessions.startCalls, 1);
-      expect(cubit.state.weekEntries, hasLength(1));
+      expect(cubit.state.visibleRangeEntries, hasLength(1));
       await cubit.close();
     },
   );
@@ -233,6 +234,7 @@ void main() {
       timezoneService: _FailingTimezoneService(),
       clock: clock,
       initialWeekStart: weekStart,
+      firstDayOfWeekIndex: 1,
       initialSelectedDate: expectedToday(),
     )..initialize();
     await pumpEventQueue();
@@ -263,6 +265,119 @@ void main() {
       weekStartFor(today: wednesday, firstDayOfWeekIndex: 1).toIso(),
       '2026-09-21',
     );
+  });
+
+  test('month ranges align complete locale weeks across leap years', () {
+    CalendarDate date(String iso) =>
+        (CalendarDate.fromIso(iso) as Ok<CalendarDate>).value;
+    final sundayFirst = monthRangeFor(
+      monthAnchor: date('2026-02-01'),
+      firstDayOfWeekIndex: 0,
+    );
+    final mondayFirst = monthRangeFor(
+      monthAnchor: date('2024-02-15'),
+      firstDayOfWeekIndex: 1,
+    );
+    final sixRows = monthRangeFor(
+      monthAnchor: date('2026-05-01'),
+      firstDayOfWeekIndex: 0,
+    );
+    final december = monthRangeFor(
+      monthAnchor: date('2026-12-20'),
+      firstDayOfWeekIndex: 1,
+    );
+
+    expect(sundayFirst.startInclusive.toIso(), '2026-02-01');
+    expect(sundayFirst.dayCount, 28);
+    expect(mondayFirst.startInclusive.toIso(), '2024-01-29');
+    expect(mondayFirst.endExclusive.toIso(), '2024-03-04');
+    expect(mondayFirst.dayCount, 35);
+    expect(sixRows.dayCount, 42);
+    expect(december.endExclusive.toIso(), '2027-01-04');
+  });
+
+  test(
+    'month mode replaces its watch and keeps adjacent-date selection',
+    () async {
+      final schedules = FakeScheduleRepository(
+        seed: [entry(date: '2026-10-01')],
+      );
+      final cubit = buildCubit(schedules: schedules)..initialize();
+      await pumpEventQueue();
+
+      cubit.setViewMode(PlannerViewMode.month);
+      await pumpEventQueue();
+      expect(cubit.state.viewMode, PlannerViewMode.month);
+      expect(schedules.watchCalls, 2);
+      expect(schedules.lastStartInclusive, isNot(weekStart));
+      expect(
+        cubit.state.visibleRange.contains(cubit.state.selectedDate),
+        isTrue,
+      );
+
+      cubit.selectDay(
+        (CalendarDate.fromIso('2026-10-01') as Ok<CalendarDate>).value,
+      );
+      expect(cubit.state.selectedDayEntries, hasLength(1));
+      cubit.goToNext();
+      await pumpEventQueue();
+      expect(schedules.watchCalls, 3);
+      expect(cubit.state.monthAnchor.toIso(), '2026-10-01');
+      await cubit.close();
+    },
+  );
+
+  test(
+    'stale queued range emissions cannot overwrite the active watch',
+    () async {
+      final march =
+          (CalendarDate.fromIso('2026-03-02') as Ok<CalendarDate>).value;
+      final schedules = FakeScheduleRepository(
+        seed: [entry(date: '2026-03-03')],
+      );
+      final cubit = PlannerCubit(
+        scheduleRepository: schedules,
+        workoutRepository: FakeWorkoutRepository(),
+        startSession: StartSession(FakeSessionRepository()),
+        timezoneService: FakeTimezoneService(),
+        clock: clock,
+        initialWeekStart: march,
+        firstDayOfWeekIndex: 1,
+        initialSelectedDate: march,
+      )..initialize();
+
+      cubit.setViewMode(PlannerViewMode.month);
+      cubit.goToNext();
+      await pumpEventQueue();
+      expect(cubit.state.monthAnchor.toIso(), '2026-04-01');
+      expect(cubit.state.visibleRangeEntries, isEmpty);
+      await cubit.close();
+    },
+  );
+
+  test('month range and navigation stay inside CalendarDate bounds', () async {
+    CalendarDate date(String iso) =>
+        (CalendarDate.fromIso(iso) as Ok<CalendarDate>).value;
+    expect(
+      monthRangeFor(
+        monthAnchor: date('0001-01-01'),
+        firstDayOfWeekIndex: 0,
+      ).dates.every((value) => value.year >= 1),
+      isTrue,
+    );
+    expect(
+      monthRangeFor(
+        monthAnchor: date('9999-12-01'),
+        firstDayOfWeekIndex: 1,
+      ).dates.every((value) => value.year <= 9999),
+      isTrue,
+    );
+    final cubit = buildCubit(selected: date('9999-12-01'))..initialize();
+    await pumpEventQueue();
+    cubit.setViewMode(PlannerViewMode.month);
+    cubit.goToNext();
+    expect(cubit.state.monthAnchor.toIso(), '9999-11-01');
+    await cubit.close();
   });
 }
 

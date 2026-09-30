@@ -8,6 +8,7 @@ import 'planner_state.dart';
 import 'widgets/add_workout_sheet.dart';
 import 'widgets/day_schedule_list.dart';
 import 'widgets/move_entry_sheet.dart';
+import 'widgets/month_grid.dart';
 import 'widgets/week_strip.dart';
 
 class PlannerPage extends StatelessWidget {
@@ -53,21 +54,22 @@ class PlannerPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Planner'),
             actions: [
-              Semantics(
-                label: 'Copy week forward',
-                button: true,
-                child: IconButton(
-                  tooltip: 'Copy week forward',
-                  constraints: const BoxConstraints(
-                    minWidth: 48,
-                    minHeight: 48,
+              if (state.viewMode == PlannerViewMode.week)
+                Semantics(
+                  label: 'Copy week forward',
+                  button: true,
+                  child: IconButton(
+                    tooltip: 'Copy week forward',
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      minHeight: 48,
+                    ),
+                    onPressed: state.actionPending
+                        ? null
+                        : () => _confirmCopyWeekForward(context, state),
+                    icon: const Icon(Icons.copy_all_outlined),
                   ),
-                  onPressed: state.actionPending
-                      ? null
-                      : () => _confirmCopyWeekForward(context, state),
-                  icon: const Icon(Icons.copy_all_outlined),
                 ),
-              ),
             ],
           ),
           floatingActionButton: Semantics(
@@ -81,20 +83,41 @@ class PlannerPage extends StatelessWidget {
               child: const Icon(Icons.add),
             ),
           ),
-          body: Column(
-            children: [
-              WeekStrip(
-                weekStart: state.weekStart,
-                selectedDate: state.selectedDate,
-                today: state.today,
-                entryCountFor: state.entryCountFor,
-                onSelectDay: cubit.selectDay,
-                onPreviousWeek: cubit.goToPreviousWeek,
-                onNextWeek: cubit.goToNextWeek,
-                actionPending: state.actionPending,
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: _ViewToggle(
+                  viewMode: state.viewMode,
+                  onChanged: cubit.setViewMode,
+                ),
               ),
-              const Divider(height: 1),
-              Expanded(child: _PlannerBody(state: state)),
+              SliverToBoxAdapter(
+                child: state.viewMode == PlannerViewMode.week
+                    ? WeekStrip(
+                        weekStart: state.weekStart,
+                        selectedDate: state.selectedDate,
+                        today: state.today,
+                        entryCountFor: state.entryCountFor,
+                        onSelectDay: cubit.selectDay,
+                        onPreviousWeek: cubit.goToPrevious,
+                        onNextWeek: cubit.goToNext,
+                        actionPending: state.actionPending,
+                      )
+                    : MonthGrid(
+                        monthAnchor: state.monthAnchor,
+                        dates: state.visibleRange.dates,
+                        firstDayOfWeekIndex: state.firstDayOfWeekIndex,
+                        selectedDate: state.selectedDate,
+                        today: state.today,
+                        entryCountFor: state.entryCountFor,
+                        onSelectDay: cubit.selectDay,
+                        onPreviousMonth: cubit.goToPrevious,
+                        onNextMonth: cubit.goToNext,
+                        actionPending: state.actionPending,
+                      ),
+              ),
+              const SliverToBoxAdapter(child: Divider(height: 1)),
+              _PlannerBody(state: state),
             ],
           ),
         );
@@ -143,6 +166,26 @@ String _copySuccessMessage(int count) {
   return 'Copied $count workouts to next week.';
 }
 
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.viewMode, required this.onChanged});
+
+  final PlannerViewMode viewMode;
+  final ValueChanged<PlannerViewMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+    child: SegmentedButton<PlannerViewMode>(
+      segments: const [
+        ButtonSegment(value: PlannerViewMode.week, label: Text('Week')),
+        ButtonSegment(value: PlannerViewMode.month, label: Text('Month')),
+      ],
+      selected: {viewMode},
+      onSelectionChanged: (selection) => onChanged(selection.single),
+    ),
+  );
+}
+
 class _PlannerBody extends StatelessWidget {
   const _PlannerBody({required this.state});
 
@@ -152,25 +195,29 @@ class _PlannerBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<PlannerCubit>();
     return switch (state.loadPhase) {
-      PlannerLoadPhase.loading => const Center(
-        child: CircularProgressIndicator(),
+      PlannerLoadPhase.loading => const SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(child: CircularProgressIndicator()),
       ),
-      PlannerLoadPhase.error => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                state.failureMessage ?? 'Unable to load schedule.',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => cubit.setWeekStart(state.weekStart),
-                child: const Text('Retry'),
-              ),
-            ],
+      PlannerLoadPhase.error => SliverFillRemaining(
+        hasScrollBody: false,
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  state.failureMessage ?? 'Unable to load schedule.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: cubit.retry,
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

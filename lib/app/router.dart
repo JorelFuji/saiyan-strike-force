@@ -131,6 +131,7 @@ GoRouter createVulcanRouter({
                             timezoneService: context.read<TimezoneService>(),
                             clock: clock,
                             initialWeekStart: weekStart,
+                            firstDayOfWeekIndex: firstDayOfWeekIndex,
                             initialSelectedDate: today,
                           )..initialize(),
                           child: const PlannerPage(),

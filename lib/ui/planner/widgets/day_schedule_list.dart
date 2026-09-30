@@ -27,22 +27,22 @@ class DayScheduleList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (entries.isEmpty) {
-      return Center(
+      return SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            'No workouts planned',
-            style: Theme.of(context).textTheme.bodyLarge,
-            semanticsLabel: 'No workouts planned for this day',
+          child: Center(
+            child: Text(
+              'No workouts planned',
+              style: Theme.of(context).textTheme.bodyLarge,
+              semanticsLabel: 'No workouts planned for this day',
+            ),
           ),
         ),
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+    return SliverList.separated(
       itemCount: entries.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final view = entries[index];
         final entry = view.workout;
@@ -67,6 +67,7 @@ class DayScheduleList extends StatelessWidget {
           onMove: () => onMove(entry.id),
         );
       },
+      separatorBuilder: (_, _) => const Divider(height: 1),
     );
   }
 }

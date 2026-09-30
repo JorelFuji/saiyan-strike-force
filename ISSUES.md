@@ -32,7 +32,7 @@ scan, move them into an archive section without renumbering or removing them.
 
 ## Ready next
 
-No outcomes are ready to begin.
+- VF-018 — Add superset support to templates and Active Session (P1).
 
 ## Issues
 
@@ -51,9 +51,11 @@ No outcomes are ready to begin.
 | VF-011 | Provide tokenized light and dark themes with accessibility fundamentals | feature | P0 | done | VF-006 | [delivery commit](https://github.com/jesusxambro/vulcan-fitness/commit/ecf0ed3), [design](docs/vulcan/design.md), [accessibility](docs/vulcan/accessibility.md), [architecture](docs/vulcan/architecture.md), [roadmap](docs/vulcan/roadmap.md), [Settings tests](test/ui/settings), [router tests](test/app/router_test.dart) |
 | VF-012 | Export local training data as versioned JSON from Settings | feature | P0 | done | VF-005, VF-009 | [delivery commit a6e890d](https://github.com/jesusxambro/vulcan-fitness/commit/a6e890d), [implementation spec](.ai/specs/2026-09-26-vf-012-versioned-json-export.md), [export workflow](lib/domain/usecases/export_data.dart), [snapshot repository](lib/data/repositories/drift_export_snapshot_repository.dart), [share service](lib/data/services/share_plus_export_share_service.dart), [domain tests](test/domain/models/export_document_test.dart), [repository tests](test/data/repositories/drift_export_snapshot_repository_test.dart), [delivery tests](test/data/services/share_plus_export_share_service_test.dart), [Settings tests](test/ui/settings/settings_cubit_test.dart) |
 | VF-013 | Start and complete freestyle sessions without a template (explicit exercise/set removal is excluded; completion never deletes a set) | feature | P0 | done | VF-005, VF-006 | [spike](.ai/spikes/2026-09-29-vf-013-freestyle-sessions.md), [implementation spec](.ai/specs/2026-09-29-vf-013-freestyle-sessions.md), [start workflow](lib/domain/usecases/start_session.dart), [transactional repository](lib/data/repositories/drift_session_repository.dart), [Today](lib/ui/today/today_page.dart), [Active Session](lib/ui/active_session/active_session_page.dart), [tests](test/data/repositories/drift_session_repository_test.dart) |
-| VF-014 | Reversible workout-template archive management (builder/detail/create/edit/duplicate/direct-start/permanent deletion excluded) | feature | P0 | done | VF-015 | [delivery tests](test/ui/workouts/workouts_page_test.dart), [repository tests](test/data/repositories/drift_workout_repository_test.dart), [archive UI](lib/ui/workouts/workouts_page.dart). Manual Android/iOS, screen-reader, focus, and device checks remain unavailable in this environment. |
+| VF-014 | Reversible workout-template archive management (builder/detail/create/edit/duplicate/direct-start/permanent deletion excluded) | feature | P0 | done | VF-015 | Delivered with VF-015 in [partial commit](https://github.com/jesusxambro/vulcan-fitness/commit/7c486a2) and [completion commit](https://github.com/jesusxambro/vulcan-fitness/commit/11790aa); [delivery tests](test/ui/workouts/workouts_page_test.dart), [repository tests](test/data/repositories/drift_workout_repository_test.dart), [archive UI](lib/ui/workouts/workouts_page.dart). Manual Android/iOS, screen-reader, focus, and device checks remain unavailable in this environment. |
 | VF-015 | Create and edit workout templates through an accessible builder | feature | P0 | done | VF-003, VF-011 | [implementation plan](.ai/specs/2026-09-30-vf-015-accessible-workout-template-builder.md), [suggestion repository](lib/data/repositories/drift_exercise_name_repository.dart), [route-owned builder](lib/ui/workouts/workout_builder_cubit.dart), [builder page](lib/ui/workouts/workout_builder_page.dart), [shared load formatter](lib/ui/core/formatters/load_formatter.dart), [repository tests](test/data/repositories/drift_exercise_name_repository_test.dart), [builder tests](test/ui/workouts/workout_builder_page_test.dart), [router tests](test/app/router_test.dart) |
 | VF-016 | Copy a planned week forward transactionally | feature | P1 | done | — | [Planner specification](docs/vulcan/features/planner.md), [prioritization spike](.ai/spikes/2026-09-30-p1-roadmap-prioritization.md), [implementation plan](.ai/specs/2026-09-30-vf-016-copy-planned-week-forward.md), [repository](lib/data/repositories/drift_schedule_repository.dart), [Planner](lib/ui/planner/planner_page.dart), [tests](test/data/repositories/drift_schedule_repository_test.dart) |
+| VF-017 | Add a read-only month-dot overview with selected-day drill-in | feature | P1 | done | VF-016 | [implementation spec](.ai/specs/2026-09-30-vf-017-month-dot-overview.md), [Planner](lib/ui/planner/planner_page.dart), [Planner Cubit](lib/ui/planner/planner_cubit.dart), [MonthGrid](lib/ui/planner/widgets/month_grid.dart), [Planner tests](test/ui/planner) |
+| VF-018 | Add superset support to templates and Active Session | feature | P1 | ready | VF-006, VF-015 | [roadmap](docs/vulcan/roadmap.md), [Active Session requirements](docs/vulcan/features/active-session.md), [template requirements](docs/vulcan/features/templates.md) |
 
 ## Delivery evidence
 
@@ -153,12 +155,12 @@ coverage test suite, and Android debug build passed. Physical device/emulator,
 iOS, TalkBack/VoiceOver, notification-denial, background/termination, and
 largest-text manual checks were not available in this environment.
 
-`VF-014` delivery evidence: the existing archive/restore UI and repository
-coverage remain intact, and its former VF-015 dependency is now complete.
-On 2026-09-30, SDK-pin verification, formatting, `git diff --check`, analyzer,
-the full coverage test suite (369 tests), and Android debug build passed.
-Physical Android/iOS, screen-reader, focus, and device checks remain
-unverified in this environment.
+`VF-014` delivery evidence: archive/restore UI and repository coverage were
+bundled with the VF-015 partial and completion commits, rather than delivered
+in a dedicated VF-014 commit. On 2026-09-30, SDK-pin verification, formatting,
+`git diff --check`, analyzer, the full coverage test suite (369 tests), and
+Android debug build passed. Physical Android/iOS, screen-reader, focus, and
+device checks remain unverified in this environment.
 
 `VF-015` delivery evidence: create/edit builder routes own their Cubits,
 preserve the immutable template aggregate until the one-shot persistence call
@@ -180,3 +182,12 @@ explicit confirmation and gives accessible committed-result feedback. On
 the full coverage test suite, and Android debug build passed. Physical
 Android/iOS, TalkBack/VoiceOver, largest-text, high/increased contrast,
 landscape, and small-phone checks remain unverified in this environment.
+
+`VF-017` delivery evidence: Planner now has a locale-aware Week/Month toggle,
+one reactive visible-range watch, and a read-only 28/35/42-cell month overview
+with exact-count accessibility semantics and selected-day drill-in actions.
+On 2026-09-30, SDK-pin verification, formatting, `git diff --check`, analyzer,
+focused Planner tests, the full Flutter test suite, and Android debug build
+passed. Physical Android/iOS, TalkBack/VoiceOver, focus order, high contrast,
+reduced motion, maximum OS text scaling, small-phone fallback, and landscape
+checks remain unverified in this environment.

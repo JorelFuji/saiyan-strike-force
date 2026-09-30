@@ -13,6 +13,8 @@ import '../../domain/services/timezone_service.dart';
 import '../../domain/usecases/start_session.dart';
 import 'planner_state.dart';
 
+export 'planner_state.dart' show monthRangeFor, weekStartFor;
+
 final class PlannerCubit extends Cubit<PlannerState> {
   PlannerCubit({
     required ScheduleRepository scheduleRepository,
@@ -21,6 +23,7 @@ final class PlannerCubit extends Cubit<PlannerState> {
     required TimezoneService timezoneService,
     required Clock clock,
     required CalendarDate initialWeekStart,
+    required int firstDayOfWeekIndex,
     CalendarDate? initialSelectedDate,
   }) : _schedules = scheduleRepository,
        _workouts = workoutRepository,
@@ -30,6 +33,8 @@ final class PlannerCubit extends Cubit<PlannerState> {
        super(
          PlannerState(
            weekStart: initialWeekStart,
+           monthAnchor: initialSelectedDate ?? initialWeekStart,
+           firstDayOfWeekIndex: firstDayOfWeekIndex,
            selectedDate: initialSelectedDate ?? initialWeekStart,
            today: calendarDateFromClock(clock),
          ),
@@ -41,14 +46,14 @@ final class PlannerCubit extends Cubit<PlannerState> {
   final TimezoneService _timezones;
   final Clock _clock;
 
-  StreamSubscription<Result<List<ScheduledWorkout>>>? _weekSubscription;
+  StreamSubscription<Result<List<ScheduledWorkout>>>? _visibleRangeSubscription;
   int _watchGeneration = 0;
 
   WorkoutRepository get workoutRepository => _workouts;
 
-  /// Begins watching the current week. Safe to call once after construction.
+  /// Begins watching the current visible range. Safe to call once after construction.
   void initialize() {
-    _subscribeToWeek(state.weekStart);
+    _subscribeToVisibleRange();
   }
 
   void selectDay(CalendarDate date) {
@@ -60,16 +65,60 @@ final class PlannerCubit extends Cubit<PlannerState> {
   void goToNextWeek() => setWeekStart(state.weekStart.addDays(7));
 
   void setWeekStart(CalendarDate weekStart) {
-    final selected = _clampSelectedToWeek(state.selectedDate, weekStart);
-    emit(
+    _setVisibleState(
       state.copyWith(
         weekStart: weekStart,
-        selectedDate: selected,
-        loadPhase: PlannerLoadPhase.loading,
-        clearFailureMessage: true,
+        selectedDate: _clampSelectedToRange(
+          state.selectedDate,
+          PlannerVisibleRange(
+            startInclusive: weekStart,
+            endExclusive: weekStart.addDays(7),
+          ),
+        ),
       ),
     );
-    _subscribeToWeek(weekStart);
+  }
+
+  void setViewMode(PlannerViewMode mode) {
+    if (state.viewMode == mode) return;
+    final selected = state.selectedDate;
+    final monthAnchor = monthAnchorForVisibleRange(selected);
+    final newWeekStart = weekStartFor(
+      today: selected,
+      firstDayOfWeekIndex: state.firstDayOfWeekIndex,
+    );
+    _setVisibleState(
+      state.copyWith(
+        viewMode: mode,
+        weekStart: newWeekStart,
+        monthAnchor: monthAnchor,
+      ),
+    );
+  }
+
+  void goToPrevious() => _navigate(-1);
+
+  void goToNext() => _navigate(1);
+
+  void retry() => _setVisibleState(state);
+
+  void _navigate(int direction) {
+    if (state.viewMode == PlannerViewMode.week) {
+      setWeekStart(state.weekStart.addDays(direction * 7));
+      return;
+    }
+    final anchor = _shiftMonth(state.monthAnchor, direction);
+    if (anchor == null) return;
+    final range = monthRangeFor(
+      monthAnchor: anchor,
+      firstDayOfWeekIndex: state.firstDayOfWeekIndex,
+    );
+    _setVisibleState(
+      state.copyWith(
+        monthAnchor: anchor,
+        selectedDate: _clampSelectedToRange(state.selectedDate, range),
+      ),
+    );
   }
 
   Future<void> addWorkout(int workoutId) async {
@@ -156,7 +205,9 @@ final class PlannerCubit extends Cubit<PlannerState> {
 
   Future<void> startEntry(int entryId) async {
     if (state.actionPending || state.startPendingEntryId != null) return;
-    final entry = state.weekEntries.where((e) => e.id == entryId).firstOrNull;
+    final entry = state.visibleRangeEntries
+        .where((e) => e.id == entryId)
+        .firstOrNull;
     if (entry == null) {
       emit(state.copyWith(failureMessage: 'Schedule entry was not found.'));
       return;
@@ -237,13 +288,24 @@ final class PlannerCubit extends Cubit<PlannerState> {
     emit(state.copyWith(clearFailureMessage: true));
   }
 
-  void _subscribeToWeek(CalendarDate weekStart) {
+  void _setVisibleState(PlannerState nextState) {
+    emit(
+      nextState.copyWith(
+        loadPhase: PlannerLoadPhase.loading,
+        clearFailureMessage: true,
+      ),
+    );
+    _subscribeToVisibleRange();
+  }
+
+  void _subscribeToVisibleRange() {
     final generation = ++_watchGeneration;
-    unawaited(_weekSubscription?.cancel());
-    _weekSubscription = _schedules
+    final range = state.visibleRange;
+    unawaited(_visibleRangeSubscription?.cancel());
+    _visibleRangeSubscription = _schedules
         .watchRange(
-          startInclusive: weekStart,
-          endExclusive: weekStart.addDays(7),
+          startInclusive: range.startInclusive,
+          endExclusive: range.endExclusive,
         )
         .listen(
           (result) {
@@ -253,7 +315,7 @@ final class PlannerCubit extends Cubit<PlannerState> {
                 emit(
                   state.copyWith(
                     loadPhase: PlannerLoadPhase.ready,
-                    weekEntries: value,
+                    visibleRangeEntries: value,
                     today: calendarDateFromClock(_clock),
                   ),
                 );
@@ -282,20 +344,19 @@ final class PlannerCubit extends Cubit<PlannerState> {
         );
   }
 
-  static CalendarDate _clampSelectedToWeek(
+  static CalendarDate _clampSelectedToRange(
     CalendarDate selected,
-    CalendarDate weekStart,
+    PlannerVisibleRange range,
   ) {
-    final end = weekStart.addDays(7);
-    if (selected >= weekStart && selected < end) {
+    if (range.contains(selected)) {
       return selected;
     }
-    return weekStart;
+    return range.startInclusive;
   }
 
   @override
   Future<void> close() async {
-    await _weekSubscription?.cancel();
+    await _visibleRangeSubscription?.cancel();
     return super.close();
   }
 }
@@ -321,15 +382,17 @@ CalendarDate calendarDateFromClock(Clock clock) {
   };
 }
 
-/// Computes the week-start [CalendarDate] containing [today] for a locale
-/// first-day index (`MaterialLocalizations.firstDayOfWeekIndex`: 0=Sun…6=Sat).
-CalendarDate weekStartFor({
-  required CalendarDate today,
-  required int firstDayOfWeekIndex,
-}) {
-  // Dart DateTime.weekday: Mon=1…Sun=7. Convert today to the same 0=Sun…6=Sat.
-  final dartWeekday = DateTime.utc(today.year, today.month, today.day).weekday;
-  final todayIndex = dartWeekday % 7; // Sun=0, Mon=1, … Sat=6
-  final delta = (todayIndex - firstDayOfWeekIndex + 7) % 7;
-  return today.addDays(-delta);
+CalendarDate? _shiftMonth(CalendarDate anchor, int delta) {
+  final rawMonth = anchor.month + delta;
+  final year = anchor.year + ((rawMonth - 1) ~/ 12);
+  final month = (rawMonth - 1) % 12 + 1;
+  // Month anchors are always day one; this keeps navigation valid at bounds.
+  final result = CalendarDate.create(year: year, month: month, day: 1);
+  return switch (result) {
+    Ok(:final value) =>
+      monthAnchorForVisibleRange(value) == anchor
+          ? null
+          : monthAnchorForVisibleRange(value),
+    Err() => null,
+  };
 }

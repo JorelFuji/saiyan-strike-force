@@ -80,6 +80,7 @@ void main() {
               timezoneService: FakeTimezoneService(),
               clock: clock,
               initialWeekStart: weekStart,
+              firstDayOfWeekIndex: 1,
               initialSelectedDate: today,
             )..initialize(),
             child: const PlannerPage(),
@@ -167,6 +168,42 @@ void main() {
     expect(find.byTooltip('Add workout'), findsOneWidget);
     expect(find.byTooltip('Copy week forward'), findsOneWidget);
     expect(find.text('Start'), findsOneWidget);
+  });
+
+  testWidgets('month toggle keeps one drill-in and hides copy-week action', (
+    tester,
+  ) async {
+    await pumpPlanner(tester);
+
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Previous month'), findsOneWidget);
+    expect(find.byTooltip('Copy week forward'), findsNothing);
+    expect(find.byType(CustomScrollView), findsOneWidget);
+
+    await tester.tap(find.text('1').last);
+    await tester.pumpAndSettle();
+    expect(find.text('No workouts planned'), findsOneWidget);
+    expect(find.byTooltip('Add workout'), findsOneWidget);
+
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('Copy week forward'), findsOneWidget);
+  });
+
+  testWidgets('month retry preserves the active range', (tester) async {
+    final schedules = FakeScheduleRepository(seed: [plannedEntry()]);
+    await pumpPlanner(tester, schedules: schedules);
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+    final monthStart = schedules.lastStartInclusive;
+    schedules.emitError(const StorageFailure('month unavailable'));
+    await tester.pumpAndSettle();
+    expect(find.text('month unavailable'), findsOneWidget);
+    await tester.tap(find.text('Retry'));
+    await tester.pumpAndSettle();
+    expect(schedules.lastStartInclusive, monthStart);
+    expect(find.byTooltip('Previous month'), findsOneWidget);
   });
 
   testWidgets('copy week requires confirmation and shows success feedback', (
