@@ -1,4 +1,5 @@
 import '../../domain/models/exercise_name.dart';
+import '../../domain/models/exercise_history.dart';
 import '../../domain/models/mass.dart';
 import '../../domain/models/workout_template.dart';
 
@@ -64,9 +65,14 @@ final class WorkoutBuilderState {
     this.saveFailureMessage,
     this.savedTemplate,
     Map<DraftCellId, String> cellErrors = const {},
+    Map<String, Map<int, ExerciseHistoryCompletedSet>> previousSets = const {},
   }) : exercises = List.unmodifiable(exercises),
        suggestions = List.unmodifiable(suggestions),
-       cellErrors = Map.unmodifiable(cellErrors);
+       cellErrors = Map.unmodifiable(cellErrors),
+       previousSets = Map.unmodifiable({
+         for (final entry in previousSets.entries)
+           entry.key: Map.unmodifiable(entry.value),
+       });
 
   final WorkoutBuilderPhase phase;
   final MassUnit massUnit;
@@ -82,6 +88,7 @@ final class WorkoutBuilderState {
   final String? saveFailureMessage;
   final WorkoutTemplate? savedTemplate;
   final Map<DraftCellId, String> cellErrors;
+  final Map<String, Map<int, ExerciseHistoryCompletedSet>> previousSets;
 
   bool get isCreate => original == null;
   bool get isSaving => phase == WorkoutBuilderPhase.saving;
@@ -110,6 +117,7 @@ final class WorkoutBuilderState {
     WorkoutTemplate? savedTemplate,
     bool clearSavedTemplate = false,
     Map<DraftCellId, String>? cellErrors,
+    Map<String, Map<int, ExerciseHistoryCompletedSet>>? previousSets,
   }) => WorkoutBuilderState(
     phase: phase ?? this.phase,
     massUnit: massUnit ?? this.massUnit,
@@ -135,5 +143,6 @@ final class WorkoutBuilderState {
         ? null
         : (savedTemplate ?? this.savedTemplate),
     cellErrors: cellErrors ?? this.cellErrors,
+    previousSets: previousSets ?? this.previousSets,
   );
 }

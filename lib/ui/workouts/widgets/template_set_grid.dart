@@ -5,10 +5,12 @@ import '../../../core/result.dart';
 import '../../../domain/models/mass.dart';
 import '../../../domain/models/prescriptions.dart';
 import '../../../domain/models/workout_template.dart';
+import '../../../domain/models/exercise_name.dart';
 import '../../core/formatters/load_formatter.dart';
 import '../../core/formatters/rest_duration_formatter.dart';
 import '../workout_builder_cubit.dart';
 import '../workout_builder_state.dart';
+import '../previous_set_format.dart';
 import 'rest_duration_sheet.dart';
 
 class TemplateSetGrid extends StatefulWidget {
@@ -91,6 +93,7 @@ class _TemplateSetGridState extends State<TemplateSetGrid> {
           child: Row(
             children: [
               const SizedBox(width: 48, child: Text('Set')),
+              const Expanded(child: Text('Previous')),
               if (exercise.loadType != LoadType.none &&
                   exercise.loadType != LoadType.bodyweight)
                 const Expanded(child: Text('Load')),
@@ -126,6 +129,19 @@ class _TemplateSetGridState extends State<TemplateSetGrid> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _setMenu(context, index, setKey),
+        Expanded(
+          child: Text(
+            formatPreviousSet(
+              widget.cubit.state.previousSets[normalizeExerciseName(
+                exercise.name,
+              )]?[index],
+              widget.massUnit,
+            ),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
         if (loadVisible) Expanded(child: _loadField(index, setKey, set)),
         Expanded(child: _repsField(index, setKey, set)),
       ],
@@ -134,7 +150,8 @@ class _TemplateSetGridState extends State<TemplateSetGrid> {
       children: [
         Semantics(
           container: true,
-          label: 'Set ${index + 1}, ${_repText(set.reps)} reps',
+          label:
+              'Set ${index + 1}, previous ${formatPreviousSet(widget.cubit.state.previousSets[normalizeExerciseName(exercise.name)]?[index], widget.massUnit)}, ${_repText(set.reps)} reps',
           child: stacked ? Column(children: [row]) : row,
         ),
         _RestDivider(

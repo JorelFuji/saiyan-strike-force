@@ -10,6 +10,7 @@ import 'package:vulcan_fitness/ui/workouts/workout_builder_state.dart';
 import '../../support/fake_exercise_name_repository.dart';
 import '../../support/fake_settings_repository.dart';
 import '../../support/fake_workout_repository.dart';
+import '../../support/fake_session_repository.dart';
 
 void main() {
   TemplateExercise squat() => (TemplateExercise.uniform(
@@ -35,11 +36,13 @@ void main() {
     FakeWorkoutRepository? workouts,
     FakeExerciseNameRepository? names,
     FakeSettingsRepository? settings,
+    FakeSessionRepository? sessions,
   }) async {
     final cubit = WorkoutBuilderCubit(
       workoutRepository: workouts ?? FakeWorkoutRepository(),
       exerciseNameRepository: names ?? FakeExerciseNameRepository(),
       settingsRepository: settings ?? FakeSettingsRepository(),
+      sessionRepository: sessions ?? FakeSessionRepository(),
       workoutId: workoutId,
     )..initialize();
     await pumpEventQueue();
@@ -193,6 +196,7 @@ void main() {
       workoutRepository: workouts,
       exerciseNameRepository: FakeExerciseNameRepository(),
       settingsRepository: FakeSettingsRepository(),
+      sessionRepository: FakeSessionRepository(),
     )..initialize();
     await pumpEventQueue();
     cubit.updateName('Push Day');

@@ -224,6 +224,7 @@ GoRouter createVulcanRouter({
                         exerciseNameRepository: context
                             .read<ExerciseNameRepository>(),
                         settingsRepository: context.read<SettingsRepository>(),
+                        sessionRepository: context.read<SessionRepository>(),
                       )..initialize(),
                       child: const WorkoutBuilderPage(),
                     ),
@@ -244,6 +245,7 @@ GoRouter createVulcanRouter({
                               .read<ExerciseNameRepository>(),
                           settingsRepository: context
                               .read<SettingsRepository>(),
+                          sessionRepository: context.read<SessionRepository>(),
                           workoutId: workoutId,
                         )..initialize(),
                         child: const WorkoutBuilderPage(),

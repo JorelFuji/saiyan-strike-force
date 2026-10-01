@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/result.dart';
 import '../../domain/models/mass.dart';
+import '../../domain/models/exercise_history.dart';
+import '../../domain/models/exercise_name.dart';
 import '../../domain/models/workout_template.dart';
 import '../../domain/repositories/exercise_name_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
+import '../../domain/repositories/session_repository.dart';
 import '../../domain/repositories/workout_repository.dart';
 import 'workout_builder_state.dart';
 import 'superset_grouping.dart' as grouping;
@@ -15,16 +20,21 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     required WorkoutRepository workoutRepository,
     required ExerciseNameRepository exerciseNameRepository,
     required SettingsRepository settingsRepository,
+    required SessionRepository sessionRepository,
     this.workoutId,
   }) : _workouts = workoutRepository,
        _exerciseNames = exerciseNameRepository,
        _settings = settingsRepository,
+       _sessions = sessionRepository,
        super(WorkoutBuilderState());
 
   final int? workoutId;
   final WorkoutRepository _workouts;
   final ExerciseNameRepository _exerciseNames;
   final SettingsRepository _settings;
+  final SessionRepository _sessions;
+  final Map<String, StreamSubscription<Result<List<ExerciseHistoryEntry>>>>
+  _historySubscriptions = {};
   int _nextExerciseKey = 1;
   int _nextSetKey = 1;
 
@@ -92,6 +102,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         original: original,
       ),
     );
+    _reconcileHistorySubscriptions();
     await _loadSuggestions();
   }
 
@@ -137,6 +148,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         clearSaveFailure: true,
       ),
     );
+    _reconcileHistorySubscriptions();
   }
 
   void replaceExercise(int key, TemplateExercise exercise) {
@@ -159,6 +171,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         clearSaveFailure: true,
       ),
     );
+    _reconcileHistorySubscriptions();
   }
 
   void removeExercise(int key) {
@@ -173,6 +186,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         clearSaveFailure: true,
       ),
     );
+    _reconcileHistorySubscriptions();
   }
 
   void updateSet(int rowKey, int setKey, TemplateSet value) {
@@ -392,6 +406,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         exercise: (exercise as Ok<TemplateExercise>).value,
       );
     _emitDraft(rows, errors: errors);
+    _reconcileHistorySubscriptions();
   }
 
   void moveEarlier(int key) {
@@ -514,6 +529,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
             suggestions: state.suggestions,
             original: value,
             savedTemplate: value,
+            previousSets: state.previousSets,
           ),
         );
       case Err(:final failure):
@@ -585,6 +601,73 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         clearSaveFailure: true,
       ),
     );
+    _reconcileHistorySubscriptions();
+  }
+
+  void _reconcileHistorySubscriptions() {
+    if (state.phase != WorkoutBuilderPhase.ready &&
+        state.phase != WorkoutBuilderPhase.saving) {
+      return;
+    }
+    final names = state.exercises
+        .map((row) => normalizeExerciseName(row.exercise.name))
+        .toSet();
+    for (final name in _historySubscriptions.keys.toList()) {
+      if (!names.contains(name)) {
+        _historySubscriptions.remove(name)?.cancel();
+        final previous = Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
+          state.previousSets,
+        )..remove(name);
+        if (!isClosed) emit(state.copyWith(previousSets: previous));
+      }
+    }
+    for (final name in names) {
+      if (_historySubscriptions.containsKey(name)) continue;
+      final lookupResult = ExerciseName.forLookup(name);
+      if (lookupResult case Err()) continue;
+      final lookup = (lookupResult as Ok<ExerciseName>).value;
+      final subscription = _sessions
+          .watchExerciseHistory(lookup)
+          .listen(
+            (result) {
+              if (isClosed) return;
+              final previous =
+                  Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
+                    state.previousSets,
+                  );
+              switch (result) {
+                case Ok(:final value) when value.isNotEmpty:
+                  previous[name] = {
+                    for (final set in value.first.completedSets)
+                      set.setIndex: set,
+                  };
+                case Ok():
+                  previous.remove(name);
+                case Err():
+                  previous.remove(name);
+              }
+              emit(state.copyWith(previousSets: previous));
+            },
+            onError: (Object _) {
+              if (isClosed) return;
+              final previous =
+                  Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
+                    state.previousSets,
+                  )..remove(name);
+              emit(state.copyWith(previousSets: previous));
+            },
+          );
+      _historySubscriptions[name] = subscription;
+    }
+  }
+
+  @override
+  Future<void> close() async {
+    for (final subscription in _historySubscriptions.values) {
+      await subscription.cancel();
+    }
+    _historySubscriptions.clear();
+    return super.close();
   }
 
   DraftExerciseRow _row(int key, TemplateExercise exercise) => DraftExerciseRow(

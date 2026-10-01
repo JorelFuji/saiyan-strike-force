@@ -25,6 +25,9 @@ final class FakeSessionRepository implements SessionRepository {
   int getByIdCalls = 0;
   int watchCompletedSummariesCalls = 0;
   int watchExerciseHistoryCalls = 0;
+  final Map<String, StreamController<Result<List<ExerciseHistoryEntry>>>>
+  exerciseHistoryControllers = {};
+  final Map<String, int> exerciseHistoryListenCounts = {};
 
   Result<int> startResult = const Ok(42);
   Result<int> startFreestyleResult = const Ok(43);
@@ -202,6 +205,9 @@ final class FakeSessionRepository implements SessionRepository {
   ) {
     watchExerciseHistoryCalls++;
     lastExerciseHistoryLookup = exerciseName;
+    final normalized = exerciseName.normalized;
+    exerciseHistoryListenCounts[normalized] =
+        (exerciseHistoryListenCounts[normalized] ?? 0) + 1;
     late final StreamController<Result<List<ExerciseHistoryEntry>>> controller;
     controller = StreamController<Result<List<ExerciseHistoryEntry>>>.broadcast(
       sync: true,
@@ -210,14 +216,29 @@ final class FakeSessionRepository implements SessionRepository {
           controller.add(event);
         }
         final next = nextExerciseHistoryEvent;
-        if (next != null) {
-          controller.add(next);
-        }
+        if (next != null) controller.add(next);
+      },
+      onCancel: () {
+        scheduleMicrotask(() {
+          if (!controller.isClosed) controller.close();
+        });
       },
     );
+    exerciseHistoryControllers[normalized] = controller;
     exerciseHistoryController = controller;
     return controller.stream;
   }
+
+  void emitExerciseHistoryFor(
+    String normalized,
+    Result<List<ExerciseHistoryEntry>> event,
+  ) {
+    final controller = exerciseHistoryControllers[normalized];
+    if (controller != null && !controller.isClosed) controller.add(event);
+  }
+
+  int exerciseHistoryListenCount(String normalized) =>
+      exerciseHistoryListenCounts[normalized] ?? 0;
 
   void emitExerciseHistory(Result<List<ExerciseHistoryEntry>> event) {
     final controller = exerciseHistoryController;

@@ -13,6 +13,7 @@ import 'package:vulcan_fitness/ui/workouts/widgets/template_exercise_editor_shee
 import '../../support/fake_exercise_name_repository.dart';
 import '../../support/fake_settings_repository.dart';
 import '../../support/fake_workout_repository.dart';
+import '../../support/fake_session_repository.dart';
 import '../../support/vulcan_test_app.dart';
 
 Future<void> settleBuilderTest(WidgetTester tester) async {
@@ -50,6 +51,7 @@ void main() {
           names ?? FakeExerciseNameRepository(names: ['Bench Press']),
       settingsRepository:
           settings ?? FakeSettingsRepository(unitResult: const Ok(MassUnit.kg)),
+      sessionRepository: FakeSessionRepository(),
       workoutId: workoutId,
     );
     addTearDown(cubit.close);
@@ -86,6 +88,7 @@ void main() {
       workoutRepository: FakeWorkoutRepository(),
       exerciseNameRepository: FakeExerciseNameRepository(),
       settingsRepository: FakeSettingsRepository(),
+      sessionRepository: FakeSessionRepository(),
     );
     addTearDown(cubit.close);
     await cubit.initialize();
