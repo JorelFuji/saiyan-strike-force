@@ -26,4 +26,36 @@ void main() {
     expect(LoadType.fromWire('bogus'), isA<Err<LoadType>>());
     expect(const ValidationFailure('x'), isA<Failure>());
   });
+
+  test('prescriptions use structural equality', () {
+    final fixedA = (RepPrescription.fixed(5) as Ok<RepPrescription>).value;
+    final fixedB = (RepPrescription.fixed(5) as Ok<RepPrescription>).value;
+    expect(fixedA, fixedB);
+    final rangeA = (RepPrescription.range(5, 8) as Ok<RepPrescription>).value;
+    final rangeB = (RepPrescription.range(5, 8) as Ok<RepPrescription>).value;
+    expect(rangeA, rangeB);
+    expect(const Amrap(), const Amrap());
+    expect(const NoLoad(), const NoLoad());
+    expect(const BodyweightLoad(), const BodyweightLoad());
+    final absoluteA =
+        (LoadPrescription.absolute(1000) as Ok<LoadPrescription>).value;
+    final absoluteB =
+        (LoadPrescription.absolute(1000) as Ok<LoadPrescription>).value;
+    expect(absoluteA, absoluteB);
+    final percentageA =
+        (LoadPrescription.percentage(50) as Ok<LoadPrescription>).value;
+    final percentageB =
+        (LoadPrescription.percentage(50) as Ok<LoadPrescription>).value;
+    expect(percentageA, percentageB);
+    final rpeA =
+        (LoadPrescription.targetRpe(7.5) as Ok<LoadPrescription>).value;
+    final rpeB =
+        (LoadPrescription.targetRpe(7.5) as Ok<LoadPrescription>).value;
+    expect(rpeA, rpeB);
+    final textA =
+        (LoadPrescription.text('tempo') as Ok<LoadPrescription>).value;
+    final textB =
+        (LoadPrescription.text('tempo') as Ok<LoadPrescription>).value;
+    expect(textA, textB);
+  });
 }

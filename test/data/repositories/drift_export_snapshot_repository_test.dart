@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:vulcan_fitness/core/failure.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vulcan_fitness/core/result.dart';
@@ -19,12 +20,14 @@ void main() {
         .insert(
           WorkoutCompanion.insert(name: 'Plan', createdAt: DateTime.utc(2026)),
         );
-    final workoutExerciseId = await insertExercise(db, workoutId: workoutId);
-    await insertWorkoutSet(
+    final workoutExerciseId = await insertExercise(
       db,
-      workoutExerciseId: workoutExerciseId,
-      restSeconds: 150,
+      workoutId: workoutId,
+      plannedSets: 1,
     );
+    await (db.update(db.workoutSet)
+          ..where((row) => row.workoutExerciseId.equals(workoutExerciseId)))
+        .write(const WorkoutSetCompanion(restSeconds: Value(150)));
     final sessionId = await db
         .into(db.session)
         .insert(

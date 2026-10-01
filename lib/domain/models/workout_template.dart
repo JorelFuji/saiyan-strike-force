@@ -3,41 +3,75 @@ import '../../core/result.dart';
 import 'exercise_name.dart';
 import 'prescriptions.dart';
 
+final class TemplateSet {
+  const TemplateSet._({
+    required this.reps,
+    required this.load,
+    required this.restSeconds,
+  });
+  final RepPrescription reps;
+  final LoadPrescription load;
+  final int restSeconds;
+
+  static Result<TemplateSet> create({
+    required RepPrescription reps,
+    required LoadPrescription load,
+    required int restSeconds,
+  }) => restSeconds < 0
+      ? const Err(ValidationFailure('Rest seconds must not be negative.'))
+      : Ok(TemplateSet._(reps: reps, load: load, restSeconds: restSeconds));
+
+  @override
+  bool operator ==(Object other) =>
+      other is TemplateSet &&
+      other.reps == reps &&
+      other.load == load &&
+      other.restSeconds == restSeconds;
+
+  @override
+  int get hashCode => Object.hash(reps, load, restSeconds);
+}
+
 final class TemplateExercise {
   TemplateExercise._({
     required this.name,
     required this.normalizedName,
-    required this.plannedSets,
-    required this.reps,
-    required this.load,
-    required this.restSeconds,
+    required List<TemplateSet> sets,
     required this.supersetGroup,
-  });
+  }) : sets = List.unmodifiable(sets);
   final String name;
   final String normalizedName;
-  final int plannedSets;
-  final RepPrescription reps;
-  final LoadPrescription load;
-  final int restSeconds;
+  final List<TemplateSet> sets;
   final int? supersetGroup;
+  int get plannedSets => sets.length;
+  RepType get repType => sets.first.reps.type;
+  LoadType get loadType => sets.first.load.type;
+  TemplateSet get lastSet => sets.last;
 
   static Result<TemplateExercise> create({
     required String name,
-    required int plannedSets,
-    required RepPrescription reps,
-    required LoadPrescription load,
-    required int restSeconds,
+    required List<TemplateSet> sets,
     int? supersetGroup,
   }) {
     final display = validateDisplayName(name);
     if (display case Err(:final failure)) {
       return Err(failure);
     }
-    if (plannedSets < 1) {
-      return const Err(ValidationFailure('Planned sets must be at least 1.'));
+    if (sets.isEmpty) {
+      return const Err(
+        ValidationFailure('An exercise needs at least one set.'),
+      );
     }
-    if (restSeconds < 0) {
-      return const Err(ValidationFailure('Rest seconds must not be negative.'));
+    final first = sets.first;
+    if (sets.any(
+      (set) =>
+          set.reps.type != first.reps.type || set.load.type != first.load.type,
+    )) {
+      return const Err(
+        ValidationFailure(
+          'All sets in an exercise must use the same rep and load mode.',
+        ),
+      );
     }
     if (supersetGroup != null && supersetGroup < 0) {
       return const Err(
@@ -49,12 +83,33 @@ final class TemplateExercise {
       TemplateExercise._(
         name: trimmed,
         normalizedName: normalizeExerciseName(trimmed),
-        plannedSets: plannedSets,
-        reps: reps,
-        load: load,
-        restSeconds: restSeconds,
+        sets: sets,
         supersetGroup: supersetGroup,
       ),
+    );
+  }
+
+  static Result<TemplateExercise> uniform({
+    required String name,
+    required int setCount,
+    required RepPrescription reps,
+    required LoadPrescription load,
+    required int restSeconds,
+    int? supersetGroup,
+  }) {
+    if (setCount < 1) {
+      return const Err(ValidationFailure('Planned sets must be at least 1.'));
+    }
+    final set = TemplateSet.create(
+      reps: reps,
+      load: load,
+      restSeconds: restSeconds,
+    );
+    if (set case Err(:final failure)) return Err(failure);
+    return create(
+      name: name,
+      sets: List.filled(setCount, (set as Ok<TemplateSet>).value),
+      supersetGroup: supersetGroup,
     );
   }
 }

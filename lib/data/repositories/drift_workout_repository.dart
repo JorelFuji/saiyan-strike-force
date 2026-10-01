@@ -237,8 +237,9 @@ final class DriftWorkoutRepository implements WorkoutRepository {
     int setIndex,
     TemplateExercise exercise,
   ) {
-    final rep = exercise.reps;
-    final load = exercise.load;
+    final set = exercise.sets[setIndex];
+    final rep = set.reps;
+    final load = set.load;
     return WorkoutSetCompanion.insert(
       workoutExerciseId: exerciseId,
       setIndex: setIndex,
@@ -251,7 +252,7 @@ final class DriftWorkoutRepository implements WorkoutRepository {
       percentage: Value(load is PercentageLoad ? load.percentage : null),
       targetRpe: Value(load is TargetRpeLoad ? load.rpe : null),
       freeformText: Value(load is TextLoad ? load.text : null),
-      restSeconds: exercise.restSeconds,
+      restSeconds: set.restSeconds,
     );
   }
 
@@ -261,9 +262,23 @@ final class DriftWorkoutRepository implements WorkoutRepository {
               ..where((t) => t.workoutId.equals(row.id))
               ..orderBy([(t) => OrderingTerm.asc(t.orderIndex)]))
             .get();
+    final childIds = children.map((child) => child.id).toList();
+    final setRows = childIds.isEmpty
+        ? <WorkoutSetData>[]
+        : await (database.select(database.workoutSet)
+                ..where((set) => set.workoutExerciseId.isIn(childIds))
+                ..orderBy([
+                  (set) => OrderingTerm.asc(set.workoutExerciseId),
+                  (set) => OrderingTerm.asc(set.setIndex),
+                ]))
+              .get();
+    final setsByExercise = <int, List<WorkoutSetData>>{};
+    for (final set in setRows) {
+      setsByExercise.putIfAbsent(set.workoutExerciseId, () => []).add(set);
+    }
     final exercises = <TemplateExercise>[];
     for (final child in children) {
-      final mapped = mapWorkoutExercise(child);
+      final mapped = mapWorkoutExercise(child, setsByExercise[child.id] ?? []);
       if (mapped case Err(:final failure)) {
         return Err(failure);
       }
@@ -285,8 +300,9 @@ final class DriftWorkoutRepository implements WorkoutRepository {
     int index,
     TemplateExercise exercise,
   ) {
-    final rep = exercise.reps;
-    final load = exercise.load;
+    final lastSet = exercise.lastSet;
+    final rep = lastSet.reps;
+    final load = lastSet.load;
     return WorkoutExerciseCompanion.insert(
       workoutId: workoutId,
       name: exercise.name,
@@ -302,7 +318,7 @@ final class DriftWorkoutRepository implements WorkoutRepository {
       percentage: Value(load is PercentageLoad ? load.percentage : null),
       targetRpe: Value(load is TargetRpeLoad ? load.rpe : null),
       freeformText: Value(load is TextLoad ? load.text : null),
-      restSeconds: exercise.restSeconds,
+      restSeconds: lastSet.restSeconds,
       supersetGroup: Value(exercise.supersetGroup),
     );
   }

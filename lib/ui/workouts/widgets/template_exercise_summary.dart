@@ -118,10 +118,10 @@ class TemplateExerciseSummary extends StatelessWidget {
   }
 
   static String _summaryLine(TemplateExercise exercise, MassUnit unit) {
-    final reps = formatCommittedReps(exercise.reps);
-    final load = formatCommittedLoad(exercise.load, unit);
+    final reps = formatCommittedReps(exercise.sets.first.reps);
+    final load = formatCommittedLoad(exercise.sets.first.load, unit);
     final sets = '${exercise.plannedSets} sets';
-    final rest = '${exercise.restSeconds}s rest';
+    final rest = '${exercise.lastSet.restSeconds}s rest';
     return '$sets · $reps · $load · $rest';
   }
 }

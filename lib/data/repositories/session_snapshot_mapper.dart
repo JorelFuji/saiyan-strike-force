@@ -160,6 +160,7 @@ Result<SessionSetSnapshot> mapSessionSetRow(SessionSetData row) {
     setIndex: row.setIndex,
     plannedReps: (plannedReps as Ok<RepPrescription>).value,
     plannedLoad: (plannedLoad as Ok<LoadPrescription>).value,
+    plannedRestSeconds: row.plannedRestSeconds,
     actual: (actual as Ok<ActualPrescription?>).value,
     rpe: row.rpe,
     completed: row.completed,

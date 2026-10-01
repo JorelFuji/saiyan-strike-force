@@ -687,9 +687,28 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
                       ..where((row) => row.workoutId.equals(command.workoutId))
                       ..orderBy([(row) => OrderingTerm.asc(row.orderIndex)]))
                     .get();
+            final sourceIds = sourceRows.map((row) => row.id).toList();
+            final sourceSets = sourceIds.isEmpty
+                ? <WorkoutSetData>[]
+                : await (database.select(database.workoutSet)
+                        ..where((set) => set.workoutExerciseId.isIn(sourceIds))
+                        ..orderBy([
+                          (set) => OrderingTerm.asc(set.workoutExerciseId),
+                          (set) => OrderingTerm.asc(set.setIndex),
+                        ]))
+                      .get();
+            final setsByExercise = <int, List<WorkoutSetData>>{};
+            for (final set in sourceSets) {
+              setsByExercise
+                  .putIfAbsent(set.workoutExerciseId, () => [])
+                  .add(set);
+            }
             final exercises = <WorkoutExerciseData>[];
             for (final row in sourceRows) {
-              final result = mapWorkoutExercise(row);
+              final result = mapWorkoutExercise(
+                row,
+                setsByExercise[row.id] ?? [],
+              );
               if (result case Err(:final failure)) {
                 throw _RepositoryFailure(failure);
               }
@@ -751,29 +770,20 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
                       supersetGroup: Value(row.supersetGroup),
                     ),
                   );
+              final templateSets = setsByExercise[row.id]!;
               const setBatchSize = 256;
               for (
                 var offset = 0;
-                offset < row.plannedSets;
+                offset < templateSets.length;
                 offset += setBatchSize
               ) {
-                final end = (offset + setBatchSize).clamp(0, row.plannedSets);
+                final end = (offset + setBatchSize).clamp(
+                  0,
+                  templateSets.length,
+                );
                 final sets = [
                   for (var index = offset; index < end; index++)
-                    SessionSetCompanion.insert(
-                      sessionExerciseId: exerciseId,
-                      setIndex: index,
-                      plannedRepType: row.repType,
-                      plannedTargetReps: Value(row.targetReps),
-                      plannedMinReps: Value(row.minReps),
-                      plannedMaxReps: Value(row.maxReps),
-                      plannedLoadType: row.loadType,
-                      plannedWeightCanonicalMg: Value(row.weightCanonicalMg),
-                      plannedPercentage: Value(row.percentage),
-                      plannedTargetRpe: Value(row.targetRpe),
-                      plannedFreeformText: Value(row.freeformText),
-                      completed: false,
-                    ),
+                    _templateSetCompanion(exerciseId, templateSets[index]),
                 ];
                 await database.batch(
                   (batch) => batch.insertAll(database.sessionSet, sets),
@@ -899,6 +909,7 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
   }) {
     final repFields = _repFields(reps);
     final loadFields = _loadFields(load);
+    // NULL planned rest falls back to the session exercise's planned rest.
     return SessionSetCompanion.insert(
       sessionExerciseId: exerciseId,
       setIndex: setIndex,
@@ -914,6 +925,25 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
       completed: false,
     );
   }
+
+  SessionSetCompanion _templateSetCompanion(
+    int exerciseId,
+    WorkoutSetData set,
+  ) => SessionSetCompanion.insert(
+    sessionExerciseId: exerciseId,
+    setIndex: set.setIndex,
+    plannedRepType: set.repType,
+    plannedTargetReps: Value(set.targetReps),
+    plannedMinReps: Value(set.minReps),
+    plannedMaxReps: Value(set.maxReps),
+    plannedLoadType: set.loadType,
+    plannedWeightCanonicalMg: Value(set.weightCanonicalMg),
+    plannedPercentage: Value(set.percentage),
+    plannedTargetRpe: Value(set.targetRpe),
+    plannedFreeformText: Value(set.freeformText),
+    plannedRestSeconds: Value(set.restSeconds),
+    completed: false,
+  );
 
   Future<_SetContext> _requireMutableSetContext({
     required int sessionId,

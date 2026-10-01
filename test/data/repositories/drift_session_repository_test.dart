@@ -336,9 +336,9 @@ void main() {
     'template edits and archival leave an existing snapshot unchanged',
     () async {
       final workouts = DriftWorkoutRepository(database, const _FixedClock());
-      final originalExercise = (TemplateExercise.create(
+      final originalExercise = (TemplateExercise.uniform(
         name: 'Bench Press',
-        plannedSets: 3,
+        setCount: 3,
         reps: (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
         load:
             (LoadPrescription.absolute(60000000) as Ok<LoadPrescription>).value,
@@ -358,9 +358,9 @@ void main() {
         database.sessionExercise,
       )..where((row) => row.sessionId.equals(sessionId))).getSingle();
       expect(before.supersetGroup, 2);
-      final replacement = (TemplateExercise.create(
+      final replacement = (TemplateExercise.uniform(
         name: 'Incline Press',
-        plannedSets: 4,
+        setCount: 4,
         reps: const Amrap(),
         load: const BodyweightLoad(),
         restSeconds: 30,

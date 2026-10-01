@@ -7,9 +7,9 @@ import 'package:vulcan_fitness/ui/workouts/workout_builder_state.dart';
 
 void main() {
   TemplateExercise exercise(String name, {int? group}) =>
-      (TemplateExercise.create(
+      (TemplateExercise.uniform(
         name: name,
-        plannedSets: 2,
+        setCount: 2,
         reps: (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
         load: LoadPrescription.bodyweight,
         restSeconds: 60,

@@ -54,6 +54,10 @@ final class FixedReps extends RepPrescription {
   final int reps;
   @override
   RepType get type => RepType.fixed;
+  @override
+  bool operator ==(Object other) => other is FixedReps && other.reps == reps;
+  @override
+  int get hashCode => Object.hash(type, reps);
 }
 
 final class RepRange extends RepPrescription {
@@ -62,12 +66,21 @@ final class RepRange extends RepPrescription {
   final int max;
   @override
   RepType get type => RepType.range;
+  @override
+  bool operator ==(Object other) =>
+      other is RepRange && other.min == min && other.max == max;
+  @override
+  int get hashCode => Object.hash(type, min, max);
 }
 
 final class Amrap extends RepPrescription {
   const Amrap();
   @override
   RepType get type => RepType.amrap;
+  @override
+  bool operator ==(Object other) => other is Amrap;
+  @override
+  int get hashCode => type.hashCode;
 }
 
 sealed class LoadPrescription {
@@ -100,12 +113,20 @@ final class NoLoad extends LoadPrescription {
   const NoLoad();
   @override
   LoadType get type => LoadType.none;
+  @override
+  bool operator ==(Object other) => other is NoLoad;
+  @override
+  int get hashCode => type.hashCode;
 }
 
 final class BodyweightLoad extends LoadPrescription {
   const BodyweightLoad();
   @override
   LoadType get type => LoadType.bodyweight;
+  @override
+  bool operator ==(Object other) => other is BodyweightLoad;
+  @override
+  int get hashCode => type.hashCode;
 }
 
 final class AbsoluteLoad extends LoadPrescription {
@@ -113,6 +134,11 @@ final class AbsoluteLoad extends LoadPrescription {
   final int milligrams;
   @override
   LoadType get type => LoadType.absolute;
+  @override
+  bool operator ==(Object other) =>
+      other is AbsoluteLoad && other.milligrams == milligrams;
+  @override
+  int get hashCode => Object.hash(type, milligrams);
 }
 
 final class PercentageLoad extends LoadPrescription {
@@ -120,6 +146,11 @@ final class PercentageLoad extends LoadPrescription {
   final int percentage;
   @override
   LoadType get type => LoadType.percentage;
+  @override
+  bool operator ==(Object other) =>
+      other is PercentageLoad && other.percentage == percentage;
+  @override
+  int get hashCode => Object.hash(type, percentage);
 }
 
 final class TargetRpeLoad extends LoadPrescription {
@@ -127,6 +158,10 @@ final class TargetRpeLoad extends LoadPrescription {
   final double rpe;
   @override
   LoadType get type => LoadType.targetRpe;
+  @override
+  bool operator ==(Object other) => other is TargetRpeLoad && other.rpe == rpe;
+  @override
+  int get hashCode => Object.hash(type, rpe);
 }
 
 final class TextLoad extends LoadPrescription {
@@ -134,4 +169,8 @@ final class TextLoad extends LoadPrescription {
   final String text;
   @override
   LoadType get type => LoadType.text;
+  @override
+  bool operator ==(Object other) => other is TextLoad && other.text == text;
+  @override
+  int get hashCode => Object.hash(type, text);
 }

@@ -73,9 +73,9 @@ void main() {
     final created = (await repository.create(
       _draft('Push', 'Bench Press'),
     ) as Ok<WorkoutTemplate>).value;
-    final changedExercise = (TemplateExercise.create(
+    final changedExercise = (TemplateExercise.uniform(
       name: 'Row',
-      plannedSets: 4,
+      setCount: 4,
       reps: const Amrap(),
       load: const NoLoad(),
       restSeconds: 0,
@@ -173,7 +173,7 @@ void main() {
           (await repository.create(draft) as Ok<WorkoutTemplate>).value;
       final read =
           (await repository.getById(created.id) as Ok<WorkoutTemplate?>).value!;
-      expect(read.exercises.map((exercise) => exercise.load.type), [
+      expect(read.exercises.map((exercise) => exercise.sets.first.load.type), [
         LoadType.none,
         LoadType.bodyweight,
         LoadType.absolute,
@@ -360,9 +360,9 @@ TemplateExercise _exercise(
   LoadPrescription load,
   RepPrescription reps, {
   int? supersetGroup,
-}) => (TemplateExercise.create(
+}) => (TemplateExercise.uniform(
   name: name,
-  plannedSets: 1,
+  setCount: 1,
   reps: reps,
   load: load,
   restSeconds: 0,
@@ -370,9 +370,9 @@ TemplateExercise _exercise(
 ) as Ok<TemplateExercise>).value;
 
 WorkoutTemplateDraft _draft(String name, String exerciseName) {
-  final exercise = (TemplateExercise.create(
+  final exercise = (TemplateExercise.uniform(
     name: exerciseName,
-    plannedSets: 3,
+    setCount: 3,
     reps: (RepPrescription.range(5, 8) as Ok<RepPrescription>).value,
     load: (LoadPrescription.absolute(102058280) as Ok<LoadPrescription>).value,
     restSeconds: 90,

@@ -653,13 +653,15 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
   AbsoluteRestState? _restForCompleteSetCommand(int setId) {
     if (_restAutoStart &&
         completionEndsRound(state.session?.exercises ?? const [], setId)) {
-      final exercise = _exerciseForSet(setId);
-      if (exercise == null) {
+      final context = _contextForSet(setId);
+      if (context == null) {
         return state.session?.rest;
       }
       final restResult = AbsoluteRestState.create(
         startedAt: clock.now(),
-        durationSeconds: exercise.plannedRestSeconds,
+        durationSeconds:
+            context.set.plannedRestSeconds ??
+            context.exercise.plannedRestSeconds,
       );
       if (restResult case Ok(:final value)) {
         return value;
@@ -670,11 +672,13 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
     return state.session?.rest;
   }
 
-  SessionExerciseSnapshot? _exerciseForSet(int setId) {
+  ({SessionExerciseSnapshot exercise, SessionSetSnapshot set})? _contextForSet(
+    int setId,
+  ) {
     for (final exercise in state.session?.exercises ?? const []) {
       for (final set in exercise.sets) {
         if (set.id == setId) {
-          return exercise;
+          return (exercise: exercise, set: set);
         }
       }
     }

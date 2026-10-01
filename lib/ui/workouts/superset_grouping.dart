@@ -6,10 +6,7 @@ import 'workout_builder_state.dart';
 TemplateExercise withSupersetGroup(TemplateExercise exercise, int? group) {
   final result = TemplateExercise.create(
     name: exercise.name,
-    plannedSets: exercise.plannedSets,
-    reps: exercise.reps,
-    load: exercise.load,
-    restSeconds: exercise.restSeconds,
+    sets: exercise.sets,
     supersetGroup: group,
   );
   return (result as Ok<TemplateExercise>).value;

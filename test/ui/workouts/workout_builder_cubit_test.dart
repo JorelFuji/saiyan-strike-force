@@ -12,9 +12,9 @@ import '../../support/fake_settings_repository.dart';
 import '../../support/fake_workout_repository.dart';
 
 void main() {
-  TemplateExercise squat() => (TemplateExercise.create(
+  TemplateExercise squat() => (TemplateExercise.uniform(
     name: 'Squat',
-    plannedSets: 3,
+    setCount: 3,
     reps: (RepPrescription.fixed(5) as Ok<RepPrescription>).value,
     load: LoadPrescription.bodyweight,
     restSeconds: 90,
@@ -101,9 +101,9 @@ void main() {
     final cubit = await createCubit();
     cubit.addExercise(squat());
     cubit.addExercise(
-      (TemplateExercise.create(
+      (TemplateExercise.uniform(
         name: 'Bench',
-        plannedSets: 3,
+        setCount: 3,
         reps: (RepPrescription.fixed(8) as Ok<RepPrescription>).value,
         load: LoadPrescription.noLoad,
         restSeconds: 60,

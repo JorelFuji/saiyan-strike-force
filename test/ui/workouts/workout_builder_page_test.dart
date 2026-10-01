@@ -73,9 +73,9 @@ void main() {
     return cubit;
   }
 
-  TemplateExercise exercise(String name) => (TemplateExercise.create(
+  TemplateExercise exercise(String name) => (TemplateExercise.uniform(
     name: name,
-    plannedSets: 3,
+    setCount: 3,
     reps: (RepPrescription.fixed(8) as Ok<RepPrescription>).value,
     load: LoadPrescription.noLoad,
     restSeconds: 90,
@@ -196,9 +196,9 @@ void main() {
   testWidgets(
     'exercise editor supports free text, suggestions, kg, and text scale',
     (tester) async {
-      final initial = (TemplateExercise.create(
+      final initial = (TemplateExercise.uniform(
         name: 'Bench Press',
-        plannedSets: 3,
+        setCount: 3,
         reps: (RepPrescription.fixed(8) as Ok<RepPrescription>).value,
         load: (LoadPrescription.absolute(
           100000000,

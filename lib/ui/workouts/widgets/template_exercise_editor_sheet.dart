@@ -62,10 +62,12 @@ class _TemplateExerciseEditorSheetState
     final initial = widget.initial;
     _exerciseName = TextEditingController(text: initial?.name ?? '');
     _sets = TextEditingController(text: '${initial?.plannedSets ?? 3}');
-    _rest = TextEditingController(text: '${initial?.restSeconds ?? 90}');
+    _rest = TextEditingController(
+      text: '${initial?.lastSet.restSeconds ?? 90}',
+    );
     if (initial != null) {
-      _repType = initial.reps.type;
-      switch (initial.reps) {
+      _repType = initial.sets.first.reps.type;
+      switch (initial.sets.first.reps) {
         case FixedReps(:final reps):
           _repPrimary = TextEditingController(text: '$reps');
           _repMaximum = TextEditingController();
@@ -76,9 +78,9 @@ class _TemplateExerciseEditorSheetState
           _repPrimary = TextEditingController();
           _repMaximum = TextEditingController();
       }
-      _loadType = initial.load.type;
+      _loadType = initial.sets.first.load.type;
       _loadValue = TextEditingController(
-        text: _seedLoadText(initial.load, widget.massUnit),
+        text: _seedLoadText(initial.sets.first.load, widget.massUnit),
       );
     } else {
       _repType = RepType.fixed;
@@ -185,9 +187,9 @@ class _TemplateExerciseEditorSheetState
       );
       return;
     }
-    final exercise = TemplateExercise.create(
+    final exercise = TemplateExercise.uniform(
       name: _exerciseName.text,
-      plannedSets: count,
+      setCount: count,
       reps: (reps as Ok<RepPrescription>).value,
       load: (load as Ok<LoadPrescription>).value,
       restSeconds: rest,

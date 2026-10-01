@@ -42,8 +42,8 @@ Future<int> insertExercise(
   String? freeformText,
   int restSeconds = 90,
   int? supersetGroup,
-}) {
-  return db
+}) async {
+  final exerciseId = await db
       .into(db.workoutExercise)
       .insert(
         WorkoutExerciseCompanion.insert(
@@ -65,6 +65,26 @@ Future<int> insertExercise(
           supersetGroup: Value(supersetGroup),
         ),
       );
+  await db.batch(
+    (batch) => batch.insertAll(db.workoutSet, [
+      for (var index = 0; index < plannedSets; index++)
+        WorkoutSetCompanion.insert(
+          workoutExerciseId: exerciseId,
+          setIndex: index,
+          repType: repType,
+          targetReps: Value(targetReps),
+          minReps: Value(minReps),
+          maxReps: Value(maxReps),
+          loadType: loadType,
+          weightCanonicalMg: Value(weightCanonicalMg),
+          percentage: Value(percentage),
+          targetRpe: Value(targetRpe),
+          freeformText: Value(freeformText),
+          restSeconds: restSeconds,
+        ),
+    ]),
+  );
+  return exerciseId;
 }
 
 Future<int> insertWorkoutSet(

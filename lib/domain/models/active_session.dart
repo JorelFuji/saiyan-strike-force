@@ -54,6 +54,7 @@ final class SessionSetSnapshot {
     required this.setIndex,
     required this.plannedReps,
     required this.plannedLoad,
+    required this.plannedRestSeconds,
     required this.actual,
     required this.rpe,
     required this.completed,
@@ -65,6 +66,7 @@ final class SessionSetSnapshot {
   final int setIndex;
   final RepPrescription plannedReps;
   final LoadPrescription plannedLoad;
+  final int? plannedRestSeconds;
   final ActualPrescription? actual;
   final double? rpe;
   final bool completed;
@@ -76,6 +78,7 @@ final class SessionSetSnapshot {
     required int setIndex,
     required RepPrescription plannedReps,
     required LoadPrescription plannedLoad,
+    int? plannedRestSeconds,
     ActualPrescription? actual,
     double? rpe,
     required bool completed,
@@ -86,6 +89,11 @@ final class SessionSetSnapshot {
     }
     if (setIndex < 0) {
       return const Err(ValidationFailure('Set index must not be negative.'));
+    }
+    if (plannedRestSeconds != null && plannedRestSeconds < 0) {
+      return const Err(
+        ValidationFailure('Planned rest seconds must not be negative.'),
+      );
     }
     final rpeResult = _validateOptionalRpe(rpe);
     if (rpeResult case Err(:final failure)) {
@@ -110,6 +118,7 @@ final class SessionSetSnapshot {
         setIndex: setIndex,
         plannedReps: plannedReps,
         plannedLoad: plannedLoad,
+        plannedRestSeconds: plannedRestSeconds,
         actual: actual,
         rpe: (rpeResult as Ok<double?>).value,
         completed: completed,

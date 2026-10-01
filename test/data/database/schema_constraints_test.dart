@@ -299,6 +299,9 @@ void main() {
     () async {
       final templateId = await workoutId();
       final exerciseId = await insertExercise(db, workoutId: templateId);
+      await (db.delete(
+        db.workoutSet,
+      )..where((row) => row.workoutExerciseId.equals(exerciseId))).go();
 
       await expectRejected(
         insertWorkoutSet(db, workoutExerciseId: exerciseId, setIndex: -1),
