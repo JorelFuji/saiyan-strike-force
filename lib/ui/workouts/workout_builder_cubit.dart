@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/result.dart';
 import '../../domain/models/mass.dart';
-import '../../domain/models/exercise_history.dart';
-import '../../domain/models/exercise_name.dart';
 import '../../domain/models/workout_template.dart';
 import '../../domain/repositories/exercise_name_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
@@ -13,6 +9,8 @@ import '../../domain/repositories/session_repository.dart';
 import '../../domain/repositories/workout_repository.dart';
 import 'workout_builder_state.dart';
 import 'superset_grouping.dart' as grouping;
+import 'workout_history_subscriptions.dart';
+import 'workout_draft_editor.dart';
 import 'widgets/template_exercise_editor_sheet.dart';
 
 final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
@@ -26,17 +24,19 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
        _exerciseNames = exerciseNameRepository,
        _settings = settingsRepository,
        _sessions = sessionRepository,
-       super(WorkoutBuilderState());
+       super(WorkoutBuilderState()) {
+    _history = WorkoutHistorySubscriptions(_sessions, (previous) {
+      if (!isClosed) emit(state.copyWith(previousSets: previous));
+    });
+  }
 
   final int? workoutId;
   final WorkoutRepository _workouts;
   final ExerciseNameRepository _exerciseNames;
   final SettingsRepository _settings;
   final SessionRepository _sessions;
-  final Map<String, StreamSubscription<Result<List<ExerciseHistoryEntry>>>>
-  _historySubscriptions = {};
-  int _nextExerciseKey = 1;
-  int _nextSetKey = 1;
+  late final WorkoutHistorySubscriptions _history;
+  final WorkoutDraftEditor _editor = WorkoutDraftEditor();
 
   Future<void> initialize() async {
     emit(
@@ -136,13 +136,9 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
 
   void addExercise(TemplateExercise exercise) {
     if (!state.phase.isEditable) return;
-    final key = _nextExerciseKey++;
     emit(
       state.copyWith(
-        exercises: grouping.normalizeSupersetRows([
-          ...state.exercises,
-          _row(key, exercise),
-        ]),
+        exercises: _editor.add(state.exercises, exercise),
         isDirty: true,
         clearValidationFailure: true,
         clearSaveFailure: true,
@@ -161,7 +157,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
       exercise: exercise,
       setKeys: row.setKeys.length == exercise.plannedSets
           ? row.setKeys
-          : _freshSetKeys(exercise.plannedSets),
+          : _editor.freshSetKeys(exercise.plannedSets),
     );
     emit(
       state.copyWith(
@@ -297,7 +293,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
     final rows = List<DraftExerciseRow>.of(state.exercises)
       ..[index] = row.copyWith(
         exercise: (exercise as Ok<TemplateExercise>).value,
-        setKeys: [...row.setKeys, _nextSetKey++],
+        setKeys: [...row.setKeys, ..._editor.freshSetKeys(1)],
       );
     _emitDraft(rows);
   }
@@ -572,9 +568,7 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
   }
 
   List<DraftExerciseRow> _rowsFromExercises(List<TemplateExercise> exercises) {
-    return [
-      for (final exercise in exercises) _row(_nextExerciseKey++, exercise),
-    ];
+    return [..._editor.rowsFromExercises(exercises)];
   }
 
   void _swap(int first, int second) {
@@ -609,76 +603,14 @@ final class WorkoutBuilderCubit extends Cubit<WorkoutBuilderState> {
         state.phase != WorkoutBuilderPhase.saving) {
       return;
     }
-    final names = state.exercises
-        .map((row) => normalizeExerciseName(row.exercise.name))
-        .toSet();
-    for (final name in _historySubscriptions.keys.toList()) {
-      if (!names.contains(name)) {
-        _historySubscriptions.remove(name)?.cancel();
-        final previous = Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
-          state.previousSets,
-        )..remove(name);
-        if (!isClosed) emit(state.copyWith(previousSets: previous));
-      }
-    }
-    for (final name in names) {
-      if (_historySubscriptions.containsKey(name)) continue;
-      final lookupResult = ExerciseName.forLookup(name);
-      if (lookupResult case Err()) continue;
-      final lookup = (lookupResult as Ok<ExerciseName>).value;
-      final subscription = _sessions
-          .watchExerciseHistory(lookup)
-          .listen(
-            (result) {
-              if (isClosed) return;
-              final previous =
-                  Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
-                    state.previousSets,
-                  );
-              switch (result) {
-                case Ok(:final value) when value.isNotEmpty:
-                  previous[name] = {
-                    for (final set in value.first.completedSets)
-                      set.setIndex: set,
-                  };
-                case Ok():
-                  previous.remove(name);
-                case Err():
-                  previous.remove(name);
-              }
-              emit(state.copyWith(previousSets: previous));
-            },
-            onError: (Object _) {
-              if (isClosed) return;
-              final previous =
-                  Map<String, Map<int, ExerciseHistoryCompletedSet>>.of(
-                    state.previousSets,
-                  )..remove(name);
-              emit(state.copyWith(previousSets: previous));
-            },
-          );
-      _historySubscriptions[name] = subscription;
-    }
+    _history.reconcile(state.exercises);
   }
 
   @override
   Future<void> close() async {
-    for (final subscription in _historySubscriptions.values) {
-      await subscription.cancel();
-    }
-    _historySubscriptions.clear();
+    await _history.close();
     return super.close();
   }
-
-  DraftExerciseRow _row(int key, TemplateExercise exercise) => DraftExerciseRow(
-    key: key,
-    exercise: exercise,
-    setKeys: _freshSetKeys(exercise.plannedSets),
-  );
-
-  List<int> _freshSetKeys(int count) => [
-    for (var index = 0; index < count; index++) _nextSetKey++,
-  ];
 
   void _updateSetValue(
     int rowKey,

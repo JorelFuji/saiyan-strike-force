@@ -7,11 +7,12 @@ import '../../core/failure.dart';
 import '../../core/result.dart';
 import '../../domain/models/active_session.dart';
 import '../../domain/models/session_status.dart';
-import '../../domain/rest/rest_notification_mapping.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/services/notification_service.dart';
+import 'active_session_set_operations.dart';
 import 'active_session_state.dart';
+import 'rest_timer_coordinator.dart';
 import 'set_draft.dart';
 import 'superset_rounds.dart';
 
@@ -24,23 +25,24 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
     required this.clock,
   }) : _sessions = sessionRepository,
        _settings = settingsRepository,
-       _notifications = notificationService,
+       _setOperations = ActiveSessionSetOperations(sessionRepository),
+       _restTimer = RestTimerCoordinator(
+         sessionId: sessionId,
+         sessions: sessionRepository,
+         notifications: notificationService,
+       ),
        super(const ActiveSessionState());
 
   final int sessionId;
   final SessionRepository _sessions;
   final SettingsRepository _settings;
-  final NotificationService _notifications;
+  final ActiveSessionSetOperations _setOperations;
+  final RestTimerCoordinator _restTimer;
   final Clock clock;
 
   StreamSubscription<Result<ActiveSession>>? _subscription;
-  final Map<int, Future<void>> _inFlightBySetId = {};
   Timer? _restUiTimer;
   bool _restAutoStart = true;
-  var _requestedNotificationPermission = false;
-  var _notificationsPermitted = true;
-  var _promptedExactAlarmSettings = false;
-  DateTime? _lastScheduledRestTarget;
 
   Future<void> initialize() async {
     await _subscription?.cancel();
@@ -104,10 +106,12 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
           ),
         );
         if (previousRest != null && value.rest == null) {
-          unawaited(_cancelRestNotification());
+          unawaited(_handleRestOutcome(_restTimer.cancel()));
         }
         if (value.rest case final rest?) {
-          unawaited(_reconcileRestNotification(rest, value.timezone));
+          unawaited(
+            _handleRestOutcome(_restTimer.reconcile(rest, value.timezone)),
+          );
         }
       case Err(:final failure):
         if (!state.hasCommittedSession) {
@@ -296,7 +300,7 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
     }
 
     if (operation.kind == SetOperationKind.saving) {
-      await _inFlightBySetId[setId];
+      await _setOperations.inFlightFor(setId);
       if (isClosed) {
         return;
       }
@@ -427,16 +431,13 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
       ),
     );
 
-    final future = _sessions.saveSetActualValues(command);
-    _inFlightBySetId[setId] = future.then((_) {});
-    final result = await future;
-    _inFlightBySetId.remove(setId);
+    final result = await _setOperations.save(setId, command);
     if (isClosed) {
       return;
     }
 
     switch (result) {
-      case Ok():
+      case SetOperationSucceeded():
         final draft = state.drafts[setId];
         _emit(
           state.copyWith(
@@ -449,7 +450,7 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
                 : {...state.drafts, setId: draft.copyWith(dirty: false)},
           ),
         );
-      case Err(:final failure):
+      case SetOperationFailed(:final failure):
         _emit(
           state.copyWith(
             operations: {
@@ -474,16 +475,13 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
       ),
     );
 
-    final future = _sessions.completeSet(command);
-    _inFlightBySetId[setId] = future.then((_) {});
-    final result = await future;
-    _inFlightBySetId.remove(setId);
+    final result = await _setOperations.complete(setId, command);
     if (isClosed) {
       return;
     }
 
     switch (result) {
-      case Ok():
+      case SetOperationSucceeded():
         final draft = state.drafts[setId];
         _emit(
           state.copyWith(
@@ -498,12 +496,12 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
         );
         final timezone = state.session?.timezone ?? 'UTC';
         final preservedRest = identical(command.rest, state.session?.rest);
-        if (command.rest case final rest? when !preservedRest) {
-          await _scheduleRestNotification(rest, timezone);
-        } else if (!preservedRest && state.session?.rest == null) {
-          await _cancelRestNotification();
+        if (!preservedRest) {
+          await _handleRestOutcome(
+            _restTimer.successfulSetFollowUp(command.rest, timezone),
+          );
         }
-      case Err(:final failure):
+      case SetOperationFailed(:final failure):
         _emit(
           state.copyWith(
             operations: {
@@ -522,131 +520,31 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
     AbsoluteRestState rest,
     String timezone,
   ) async {
-    final commandResult = UpdateSessionRestCommand.create(
-      sessionId: sessionId,
-      rest: rest,
-    );
-    if (commandResult case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
-      return;
-    }
-    final result = await _sessions.updateSessionRest(
-      (commandResult as Ok).value,
-    );
-    if (isClosed) {
-      return;
-    }
-    if (result case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
-      return;
-    }
-    await _scheduleRestNotification(rest, timezone);
+    await _handleRestOutcome(_restTimer.commit(rest, timezone));
   }
 
   Future<void> _clearRestThenCancel() async {
-    final commandResult = ClearSessionRestCommand.create(sessionId: sessionId);
-    if (commandResult case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
-      return;
-    }
-    final result = await _sessions.clearSessionRest(
-      (commandResult as Ok).value,
-    );
-    if (isClosed) {
-      return;
-    }
-    if (result case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
-      return;
-    }
-    await _cancelRestNotification();
+    await _handleRestOutcome(_restTimer.clear());
   }
 
-  Future<void> _scheduleRestNotification(
-    AbsoluteRestState rest,
-    String timezone,
-  ) async {
-    if (!_notificationsPermitted) {
-      return;
-    }
-    if (!_requestedNotificationPermission) {
-      _requestedNotificationPermission = true;
-      final permission = await _notifications.requestNotificationPermission();
-      if (permission case Ok(value: final granted) when !granted) {
-        _notificationsPermitted = false;
+  Future<void> _handleRestOutcome(Future<RestTimerOutcome> future) async {
+    final outcome = await future;
+    if (isClosed) return;
+    switch (outcome) {
+      case RestPersistenceFailure(:final failure) ||
+          RestAlertFailure(:final failure):
+        _emit(state.copyWith(streamReadMessage: failure.message));
+      case RestAlertDegraded(:final message):
         _emit(
           state.copyWith(
-            restAlertDegradedMessage: restAlertsDeniedMessage,
+            restAlertDegradedMessage: message,
             clearRestAlertDegradedMessage: false,
           ),
         );
+      case RestTimerSuccess():
+        _emit(state.copyWith(clearRestAlertDegradedMessage: true));
+      case RestTimerCancelled():
         return;
-      }
-    }
-
-    var degradedExact = false;
-    if (!_promptedExactAlarmSettings) {
-      final exact = await _notifications.canScheduleExactAlarms();
-      if (exact case Ok(value: final canExact) when !canExact) {
-        final afterPrompt = await _notifications.canScheduleExactAlarms(
-          openSettingsIfNeeded: true,
-        );
-        _promptedExactAlarmSettings = true;
-        if (afterPrompt case Ok(value: final canExactAfter)
-            when !canExactAfter) {
-          degradedExact = true;
-        }
-      }
-    } else {
-      final exact = await _notifications.canScheduleExactAlarms();
-      if (exact case Ok(value: final canExact) when !canExact) {
-        degradedExact = true;
-      }
-    }
-
-    final schedule = await _notifications.scheduleRestAlert(
-      sessionId: sessionId,
-      targetAtUtc: rest.targetAt,
-      ianaTimeZone: timezone,
-    );
-    if (isClosed) {
-      return;
-    }
-
-    if (schedule case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
-      return;
-    }
-
-    _lastScheduledRestTarget = rest.targetAt;
-    _emit(
-      state.copyWith(
-        restAlertDegradedMessage: degradedExact
-            ? restExactAlarmDeniedMessage
-            : null,
-        clearRestAlertDegradedMessage: !degradedExact,
-      ),
-    );
-  }
-
-  Future<void> _reconcileRestNotification(
-    AbsoluteRestState rest,
-    String timezone,
-  ) async {
-    if (_lastScheduledRestTarget == rest.targetAt) {
-      return;
-    }
-    await _scheduleRestNotification(rest, timezone);
-  }
-
-  Future<void> _cancelRestNotification() async {
-    _lastScheduledRestTarget = null;
-    final result = await _notifications.cancelRestAlert(sessionId);
-    if (isClosed) {
-      return;
-    }
-    if (result case Err(:final failure)) {
-      _emit(state.copyWith(streamReadMessage: failure.message));
     }
   }
 
@@ -703,7 +601,7 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
       return;
     }
     if (result case Ok()) {
-      await _cancelRestNotification();
+      await _handleRestOutcome(_restTimer.cancel());
     } else if (result case Err(:final failure)) {
       _emit(state.copyWith(streamReadMessage: failure.message));
     }
@@ -762,7 +660,7 @@ final class ActiveSessionCubit extends Cubit<ActiveSessionState> {
     }
     switch (result) {
       case Ok():
-        await _cancelRestNotification();
+        await _handleRestOutcome(_restTimer.cancel());
         _emit(state.copyWith(finishPending: false, finishSucceeded: true));
       case Err(:final failure):
         _emit(

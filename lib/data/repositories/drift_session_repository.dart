@@ -11,9 +11,11 @@ import '../../domain/models/session_status.dart';
 import '../../domain/repositories/session_repository.dart';
 import '../../domain/usecases/start_session.dart';
 import '../database/app_database.dart';
-import 'exercise_history_mapper.dart';
-import 'session_history_mapper.dart';
 import 'session_snapshot_mapper.dart';
+import 'session_aggregate_reader.dart';
+import 'session_history_reader.dart';
+import 'session_mutation_writer.dart';
+import 'session_snapshot_writer.dart';
 import 'session_storage_retry.dart';
 import 'workout_exercise_mapper.dart';
 
@@ -23,11 +25,23 @@ final class DriftSessionRepository implements SessionRepository {
 
   final AppDatabase database;
   final SessionStorageRetry _storageRetry;
+  late final SessionAggregateReader _aggregateReader = SessionAggregateReader(
+    database,
+  );
+  late final SessionHistoryReader _historyReader = SessionHistoryReader(
+    database,
+  );
+  late final SessionMutationWriter _mutationWriter = SessionMutationWriter(
+    database,
+  );
+  late final SessionSnapshotWriter _snapshotWriter = SessionSnapshotWriter(
+    database,
+  );
 
   @override
   Future<Result<ActiveSession>> getById(int sessionId) async {
     try {
-      return await _loadAggregate(sessionId);
+      return await _aggregateReader.load(sessionId);
     } on _RepositoryFailure catch (error) {
       return Err(error.failure);
     } on Exception catch (error, stack) {
@@ -37,26 +51,10 @@ final class DriftSessionRepository implements SessionRepository {
 
   @override
   Stream<Result<ActiveSession>> watchById(int sessionId) {
-    final trigger = database.customSelect(
-      '''
-SELECT s.id
-FROM session s
-LEFT JOIN session_exercise se ON se.session_id = s.id
-LEFT JOIN session_set ss ON ss.session_exercise_id = se.id
-WHERE s.id = ?
-''',
-      variables: [Variable.withInt(sessionId)],
-      readsFrom: {
-        database.session,
-        database.sessionExercise,
-        database.sessionSet,
-      },
-    );
     return (() async* {
-      yield await getById(sessionId);
       try {
-        await for (final _ in trigger.watch()) {
-          yield await getById(sessionId);
+        await for (final value in _aggregateReader.watch(sessionId)) {
+          yield value;
         }
       } on _RepositoryFailure catch (error) {
         yield Err<ActiveSession>(error.failure);
@@ -68,7 +66,8 @@ WHERE s.id = ?
 
   @override
   Stream<Result<List<CompletedSessionSummary>>> watchCompletedSummaries() {
-    final query = database.customSelect(
+    return _historyReader.watchCompletedSummaries();
+    /* final query = database.customSelect(
       '''
 SELECT
   s.id AS id,
@@ -131,14 +130,15 @@ ORDER BY s.started_at DESC, s.id DESC
           _storageFailure(error, stack),
         );
       }
-    });
+    }); */
   }
 
   @override
   Stream<Result<List<ExerciseHistoryEntry>>> watchExerciseHistory(
     ExerciseName exerciseName,
   ) {
-    final normalized = exerciseName.normalized;
+    return _historyReader.watchExerciseHistory(exerciseName);
+    /* final normalized = exerciseName.normalized;
     final query = database.customSelect(
       '''
 SELECT
@@ -219,7 +219,7 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
       } on Exception catch (error, stack) {
         return Err<List<ExerciseHistoryEntry>>(_storageFailure(error, stack));
       }
-    });
+    }); */
   }
 
   @override
@@ -671,127 +671,133 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
     try {
       return Ok(
         await _storageRetry.run(
-          () => database.transaction(() async {
-            await _requireNoActiveSession();
-            final workout =
-                await (database.select(database.workout)
-                      ..where((row) => row.id.equals(command.workoutId)))
-                    .getSingleOrNull();
-            if (workout == null) {
-              throw const _RepositoryFailure(
-                NotFoundFailure('Workout template was not found.'),
-              );
-            }
-            final sourceRows =
-                await (database.select(database.workoutExercise)
-                      ..where((row) => row.workoutId.equals(command.workoutId))
-                      ..orderBy([(row) => OrderingTerm.asc(row.orderIndex)]))
-                    .get();
-            final sourceIds = sourceRows.map((row) => row.id).toList();
-            final sourceSets = sourceIds.isEmpty
-                ? <WorkoutSetData>[]
-                : await (database.select(database.workoutSet)
-                        ..where((set) => set.workoutExerciseId.isIn(sourceIds))
-                        ..orderBy([
-                          (set) => OrderingTerm.asc(set.workoutExerciseId),
-                          (set) => OrderingTerm.asc(set.setIndex),
-                        ]))
+          () => _snapshotWriter.withinFacadeTransaction(
+            () => database.transaction(() async {
+              await _requireNoActiveSession();
+              final workout =
+                  await (database.select(database.workout)
+                        ..where((row) => row.id.equals(command.workoutId)))
+                      .getSingleOrNull();
+              if (workout == null) {
+                throw const _RepositoryFailure(
+                  NotFoundFailure('Workout template was not found.'),
+                );
+              }
+              final sourceRows =
+                  await (database.select(database.workoutExercise)
+                        ..where(
+                          (row) => row.workoutId.equals(command.workoutId),
+                        )
+                        ..orderBy([(row) => OrderingTerm.asc(row.orderIndex)]))
                       .get();
-            final setsByExercise = <int, List<WorkoutSetData>>{};
-            for (final set in sourceSets) {
-              setsByExercise
-                  .putIfAbsent(set.workoutExerciseId, () => [])
-                  .add(set);
-            }
-            final exercises = <WorkoutExerciseData>[];
-            for (final row in sourceRows) {
-              final result = mapWorkoutExercise(
-                row,
-                setsByExercise[row.id] ?? [],
-              );
-              if (result case Err(:final failure)) {
-                throw _RepositoryFailure(failure);
+              final sourceIds = sourceRows.map((row) => row.id).toList();
+              final sourceSets = sourceIds.isEmpty
+                  ? <WorkoutSetData>[]
+                  : await (database.select(database.workoutSet)
+                          ..where(
+                            (set) => set.workoutExerciseId.isIn(sourceIds),
+                          )
+                          ..orderBy([
+                            (set) => OrderingTerm.asc(set.workoutExerciseId),
+                            (set) => OrderingTerm.asc(set.setIndex),
+                          ]))
+                        .get();
+              final setsByExercise = <int, List<WorkoutSetData>>{};
+              for (final set in sourceSets) {
+                setsByExercise
+                    .putIfAbsent(set.workoutExerciseId, () => [])
+                    .add(set);
               }
-              exercises.add(row);
-            }
-            if (command.scheduleEntryId case final scheduleId?) {
-              final schedule = await (database.select(
-                database.scheduleEntry,
-              )..where((row) => row.id.equals(scheduleId))).getSingleOrNull();
-              if (schedule == null) {
-                throw const _RepositoryFailure(
-                  NotFoundFailure('Schedule entry was not found.'),
+              final exercises = <WorkoutExerciseData>[];
+              for (final row in sourceRows) {
+                final result = mapWorkoutExercise(
+                  row,
+                  setsByExercise[row.id] ?? [],
                 );
+                if (result case Err(:final failure)) {
+                  throw _RepositoryFailure(failure);
+                }
+                exercises.add(row);
               }
-              if (schedule.workoutId != command.workoutId ||
-                  schedule.status != 'planned' ||
-                  schedule.sessionId != null) {
-                throw const _RepositoryFailure(
-                  ValidationFailure(
-                    'Schedule entry cannot start this workout.',
-                  ),
-                );
-              }
-            }
-            final status = SessionStatus.running.wireValue;
-            final sessionId = await database
-                .into(database.session)
-                .insert(
-                  SessionCompanion.insert(
-                    workoutId: Value(command.workoutId),
-                    scheduleEntryId: Value(command.scheduleEntryId),
-                    workoutNameSnapshot: workout.name,
-                    startedAt: command.startedAt.toUtc(),
-                    timezone: command.timezone,
-                    status: status,
-                  ),
-                );
-            for (var order = 0; order < exercises.length; order++) {
-              final row = exercises[order];
-              final exerciseId = await database
-                  .into(database.sessionExercise)
-                  .insert(
-                    SessionExerciseCompanion.insert(
-                      sessionId: sessionId,
-                      nameSnapshot: row.name,
-                      normalizedName: row.normalizedName,
-                      orderIndex: order,
-                      plannedSets: row.plannedSets,
-                      plannedRepType: row.repType,
-                      plannedTargetReps: Value(row.targetReps),
-                      plannedMinReps: Value(row.minReps),
-                      plannedMaxReps: Value(row.maxReps),
-                      plannedLoadType: row.loadType,
-                      plannedWeightCanonicalMg: Value(row.weightCanonicalMg),
-                      plannedPercentage: Value(row.percentage),
-                      plannedTargetRpe: Value(row.targetRpe),
-                      plannedFreeformText: Value(row.freeformText),
-                      plannedRestSeconds: row.restSeconds,
-                      supersetGroup: Value(row.supersetGroup),
+              if (command.scheduleEntryId case final scheduleId?) {
+                final schedule = await (database.select(
+                  database.scheduleEntry,
+                )..where((row) => row.id.equals(scheduleId))).getSingleOrNull();
+                if (schedule == null) {
+                  throw const _RepositoryFailure(
+                    NotFoundFailure('Schedule entry was not found.'),
+                  );
+                }
+                if (schedule.workoutId != command.workoutId ||
+                    schedule.status != 'planned' ||
+                    schedule.sessionId != null) {
+                  throw const _RepositoryFailure(
+                    ValidationFailure(
+                      'Schedule entry cannot start this workout.',
                     ),
                   );
-              final templateSets = setsByExercise[row.id]!;
-              const setBatchSize = 256;
-              for (
-                var offset = 0;
-                offset < templateSets.length;
-                offset += setBatchSize
-              ) {
-                final end = (offset + setBatchSize).clamp(
-                  0,
-                  templateSets.length,
-                );
-                final sets = [
-                  for (var index = offset; index < end; index++)
-                    _templateSetCompanion(exerciseId, templateSets[index]),
-                ];
-                await database.batch(
-                  (batch) => batch.insertAll(database.sessionSet, sets),
-                );
+                }
               }
-            }
-            return sessionId;
-          }),
+              final status = SessionStatus.running.wireValue;
+              final sessionId = await database
+                  .into(database.session)
+                  .insert(
+                    SessionCompanion.insert(
+                      workoutId: Value(command.workoutId),
+                      scheduleEntryId: Value(command.scheduleEntryId),
+                      workoutNameSnapshot: workout.name,
+                      startedAt: command.startedAt.toUtc(),
+                      timezone: command.timezone,
+                      status: status,
+                    ),
+                  );
+              for (var order = 0; order < exercises.length; order++) {
+                final row = exercises[order];
+                final exerciseId = await database
+                    .into(database.sessionExercise)
+                    .insert(
+                      SessionExerciseCompanion.insert(
+                        sessionId: sessionId,
+                        nameSnapshot: row.name,
+                        normalizedName: row.normalizedName,
+                        orderIndex: order,
+                        plannedSets: row.plannedSets,
+                        plannedRepType: row.repType,
+                        plannedTargetReps: Value(row.targetReps),
+                        plannedMinReps: Value(row.minReps),
+                        plannedMaxReps: Value(row.maxReps),
+                        plannedLoadType: row.loadType,
+                        plannedWeightCanonicalMg: Value(row.weightCanonicalMg),
+                        plannedPercentage: Value(row.percentage),
+                        plannedTargetRpe: Value(row.targetRpe),
+                        plannedFreeformText: Value(row.freeformText),
+                        plannedRestSeconds: row.restSeconds,
+                        supersetGroup: Value(row.supersetGroup),
+                      ),
+                    );
+                final templateSets = setsByExercise[row.id]!;
+                const setBatchSize = 256;
+                for (
+                  var offset = 0;
+                  offset < templateSets.length;
+                  offset += setBatchSize
+                ) {
+                  final end = (offset + setBatchSize).clamp(
+                    0,
+                    templateSets.length,
+                  );
+                  final sets = [
+                    for (var index = offset; index < end; index++)
+                      _templateSetCompanion(exerciseId, templateSets[index]),
+                  ];
+                  await database.batch(
+                    (batch) => batch.insertAll(database.sessionSet, sets),
+                  );
+                }
+              }
+              return sessionId;
+            }),
+          ),
         ),
       );
     } on _RepositoryFailure catch (error) {
@@ -809,6 +815,8 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
     }
   }
 
+  // Kept temporarily as private shared mapping reference while writer seams land.
+  // ignore: unused_element
   Future<Result<ActiveSession>> _loadAggregate(int sessionId) async {
     final row = await (database.select(
       database.session,
@@ -848,13 +856,7 @@ ORDER BY s.started_at DESC, s.id DESC, se.order_index ASC, ss.set_index ASC
   }
 
   Future<void> _requireNoActiveSession() async {
-    final active =
-        await (database.select(database.session)..where(
-              (row) =>
-                  row.status.equals('running') | row.status.equals('paused'),
-            ))
-            .get();
-    if (active.isNotEmpty) {
+    if (await _mutationWriter.hasActiveSession()) {
       throw const _RepositoryFailure(
         ValidationFailure('An active session is already in progress.'),
       );
