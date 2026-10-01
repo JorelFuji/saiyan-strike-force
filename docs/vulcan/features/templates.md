@@ -24,7 +24,10 @@ Reusable workout definitions the user builds and edits. Templates are **mutable*
     freeform_text         # when LoadType = text
     ```
 
-  - Rest duration in seconds (used by the in-session rest timer)
+  - An ordered list of planned sets. Each set has structured reps, structured
+    load, and `rest_seconds` for the rest after that set. All sets in one
+    exercise share one rep type and one load type. Set types (`W`/`D`/`F`) are
+    out of scope.
   - Optional adjacent superset grouping. In the builder, an exercise can be
     grouped only with the immediately preceding exercise through an explicit
     action. Saves normalize groups to contiguous runs of two or more with
@@ -32,6 +35,13 @@ Reusable workout definitions the user builds and edits. Templates are **mutable*
     cleared on the next template save. Group numbers are implementation data,
     not user-authored fields.
 - Reordering exercises within a template via long-press drag handle.
+
+The builder renders each exercise as a card with an inline set grid and a
+read-only, muted Previous column. Rest dividers open a rest editor with ±15
+second steppers and an “Apply to all sets” action. “Add Set” copies the last
+set; the set-number menu removes a set with Undo, and the last set cannot be
+removed. Previous values come from the latest finished session for the
+normalized exercise name, matched by set index; missing values render `—`.
 
 Templates are **mutable definitions**. Sessions are **immutable-at-start snapshots** of the prescription. Editing a template after a session has started must not rewrite that session's planned values.
 

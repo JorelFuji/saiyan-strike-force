@@ -31,6 +31,13 @@ final class DriftExportSnapshotRepository implements ExportSnapshotRepository {
                   (t) => OrderingTerm.asc(t.id),
                 ]))
                 .get();
+        final workoutSets =
+            await (database.select(database.workoutSet)..orderBy([
+                  (t) => OrderingTerm.asc(t.workoutExerciseId),
+                  (t) => OrderingTerm.asc(t.setIndex),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+                .get();
         final schedules = await (database.select(
           database.scheduleEntry,
         )..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
@@ -52,6 +59,10 @@ final class DriftExportSnapshotRepository implements ExportSnapshotRepository {
                 ]))
                 .get();
         for (final row in workoutExercises) {
+          _valid(RepType.fromWire(row.repType));
+          _valid(LoadType.fromWire(row.loadType));
+        }
+        for (final row in workoutSets) {
           _valid(RepType.fromWire(row.repType));
           _valid(LoadType.fromWire(row.loadType));
         }
@@ -111,6 +122,25 @@ final class DriftExportSnapshotRepository implements ExportSnapshotRepository {
                     'freeformText': r.freeformText,
                     'restSeconds': r.restSeconds,
                     'supersetGroup': r.supersetGroup,
+                  },
+                )
+                .toList(),
+            workoutSets: workoutSets
+                .map(
+                  (r) => {
+                    'id': r.id,
+                    'workoutExerciseId': r.workoutExerciseId,
+                    'setIndex': r.setIndex,
+                    'repType': r.repType,
+                    'targetReps': r.targetReps,
+                    'minReps': r.minReps,
+                    'maxReps': r.maxReps,
+                    'loadType': r.loadType,
+                    'weightCanonicalMg': r.weightCanonicalMg,
+                    'percentage': r.percentage,
+                    'targetRpe': r.targetRpe,
+                    'freeformText': r.freeformText,
+                    'restSeconds': r.restSeconds,
                   },
                 )
                 .toList(),
@@ -195,6 +225,7 @@ final class DriftExportSnapshotRepository implements ExportSnapshotRepository {
                     'rpe': r.rpe,
                     'completed': r.completed,
                     'completedAt': _instant(r.completedAt),
+                    'plannedRestSeconds': r.plannedRestSeconds,
                   },
                 )
                 .toList(),

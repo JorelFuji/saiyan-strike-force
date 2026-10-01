@@ -57,6 +57,7 @@ Build in this order. Do not start pixel-pushing Active Session until the snapsho
 - Analytics dashboard
 - Template version history as a first-class user feature (sessions already snapshot)
 - Apple HealthKit / Google Health Connect write-only workout + duration; no estimated calories; outbox/retry TBD when revived
+- Update template from finished session
 
 ---
 
@@ -83,5 +84,6 @@ Build in this order. Do not start pixel-pushing Active Session until the snapsho
 | 17 | Export delivery | JSON via `dart:convert` + share sheet (`share_plus`). `csv` package deferred with optional CSV. |
 | 18 | Freezed | Selective, not required on every type. |
 | 19 | Cubit granularity | Screen/workflow Cubits, not one Cubit per tab-feature forever and not per leaf widget. |
+| 20 | Template sets | Per-set reps, load, and rest in a `workout_set` child table (schema v2). Exercise-level columns are derived on write. No set types in v1. |
 
 > ⚠️ OPEN: None that block implementation. Plate-calculator UX and "show original logged unit on a historical set" can be decided during build without schema changes (canonical mg is enough).

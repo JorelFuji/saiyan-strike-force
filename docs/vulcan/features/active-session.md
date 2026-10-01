@@ -74,6 +74,7 @@ session_set
   session_exercise_id
   set_index
   planned load/rep fields (copied at start / when the set is added)
+  planned_rest_seconds       nullable; NULL falls back to the exercise rest
   actual load/rep fields
   rpe                       nullable
   completed
@@ -121,7 +122,8 @@ For a valid contiguous group of two or more snapshot exercises, Active Session
 selects members in template order one round at a time. A member with no set in
 a later round is skipped, so unequal planned set counts do not create a false
 pause. Auto-rest starts only after the final available member of the round
-commits, using that member's planned rest duration. Non-final members do not
+commits, using the completing set's planned rest and falling back to the
+exercise's planned rest when the set has none. Non-final members do not
 replace or clear an already armed rest. Legacy singleton or non-contiguous
 tokens are treated as ordinary exercises at read time.
 

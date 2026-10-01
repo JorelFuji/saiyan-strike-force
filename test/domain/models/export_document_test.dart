@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vulcan_fitness/domain/models/export_document.dart';
 
 void main() {
-  test('serializes a stable versioned envelope and all seven collections', () {
+  test('serializes a stable versioned envelope and all eight collections', () {
     final document = ExportDocument(
       exportedAt: DateTime.parse('2026-09-26T10:00:00-06:00'),
       appVersion: '1.0.0+1',
@@ -10,6 +10,7 @@ void main() {
         settings: const [],
         workouts: const [],
         workoutExercises: const [],
+        workoutSets: const [],
         scheduleEntries: const [],
         sessions: const [],
         sessionExercises: const [],
@@ -17,13 +18,14 @@ void main() {
       ),
     );
     expect(document.toJson(), {
-      'schemaVersion': 1,
+      'schemaVersion': 2,
       'exportedAt': '2026-09-26T16:00:00.000Z',
       'appVersion': '1.0.0+1',
       'collections': {
         'settings': [],
         'workouts': [],
         'workoutExercises': [],
+        'workoutSets': [],
         'scheduleEntries': [],
         'sessions': [],
         'sessionExercises': [],
@@ -51,6 +53,7 @@ void main() {
               'weightCanonicalMg': 102058280,
             },
           ],
+          workoutSets: const [],
           scheduleEntries: const [],
           sessions: const [
             {

@@ -29,6 +29,16 @@ void main() {
     expect(firstValue.name, 'First');
     expect(firstValue.createdAt, now);
     expect(firstValue.exercises.single.normalizedName, 'bench press');
+    final persistedExercise = await (database.select(
+      database.workoutExercise,
+    )..where((row) => row.workoutId.equals(firstValue.id))).getSingle();
+    final persistedSets =
+        await (database.select(database.workoutSet)..where(
+              (row) => row.workoutExerciseId.equals(persistedExercise.id),
+            ))
+            .get();
+    expect(persistedSets, hasLength(3));
+    expect(persistedSets.map((row) => row.setIndex), [0, 1, 2]);
     expect(
       (await repository.getById(firstValue.id)),
       isA<Ok<WorkoutTemplate?>>(),
@@ -80,6 +90,9 @@ void main() {
       ) as Ok<WorkoutTemplate>).value,
     ) as Ok<WorkoutTemplate>).value;
     expect(updated.exercises.single.name, 'Row');
+    final updatedSets = await database.select(database.workoutSet).get();
+    expect(updatedSets, hasLength(4));
+    expect(updatedSets.map((row) => row.setIndex), [0, 1, 2, 3]);
     final duplicate =
         (await repository.duplicate(updated.id) as Ok<WorkoutTemplate>).value;
     expect(duplicate.id, isNot(updated.id));
@@ -168,10 +181,16 @@ void main() {
         LoadType.targetRpe,
         LoadType.text,
       ]);
-      expect(read.exercises.take(2).map((exercise) => exercise.supersetGroup), [4, 4]);
+      expect(read.exercises.take(2).map((exercise) => exercise.supersetGroup), [
+        4,
+        4,
+      ]);
       final duplicate =
           (await repository.duplicate(created.id) as Ok<WorkoutTemplate>).value;
-      expect(duplicate.exercises.take(2).map((exercise) => exercise.supersetGroup), [4, 4]);
+      expect(
+        duplicate.exercises.take(2).map((exercise) => exercise.supersetGroup),
+        [4, 4],
+      );
       final archived =
           (await repository.archive(created.id) as Ok<WorkoutTemplate>).value;
       final archivedAgain =
@@ -339,15 +358,15 @@ void main() {
 TemplateExercise _exercise(
   String name,
   LoadPrescription load,
-  RepPrescription reps,
-  {int? supersetGroup},
-) => (TemplateExercise.create(
+  RepPrescription reps, {
+  int? supersetGroup,
+}) => (TemplateExercise.create(
   name: name,
   plannedSets: 1,
   reps: reps,
-    load: load,
-    restSeconds: 0,
-    supersetGroup: supersetGroup,
+  load: load,
+  restSeconds: 0,
+  supersetGroup: supersetGroup,
 ) as Ok<TemplateExercise>).value;
 
 WorkoutTemplateDraft _draft(String name, String exerciseName) {

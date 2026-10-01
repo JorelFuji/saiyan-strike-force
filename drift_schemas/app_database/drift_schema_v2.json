@@ -1,0 +1,1745 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": false
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "app_metadata",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "key",
+            "getter_name": "key",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "value",
+            "getter_name": "value",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 1,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "settings",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "key",
+            "getter_name": "key",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "value",
+            "getter_name": "value",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 2,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "workout",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archived_at",
+            "getter_name": "archivedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 3,
+      "references": [
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "workout_exercise",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "workout_id",
+            "getter_name": "workoutId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES workout(id)ON DELETE CASCADE",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "workout",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "normalized_name",
+            "getter_name": "normalizedName",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "order_index",
+            "getter_name": "orderIndex",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_sets",
+            "getter_name": "plannedSets",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rep_type",
+            "getter_name": "repType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_reps",
+            "getter_name": "targetReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "min_reps",
+            "getter_name": "minReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "max_reps",
+            "getter_name": "maxReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "load_type",
+            "getter_name": "loadType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "weight_canonical_mg",
+            "getter_name": "weightCanonicalMg",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "percentage",
+            "getter_name": "percentage",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_rpe",
+            "getter_name": "targetRpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "freeform_text",
+            "getter_name": "freeformText",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rest_seconds",
+            "getter_name": "restSeconds",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "superset_group",
+            "getter_name": "supersetGroup",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CONSTRAINT workout_exercise_order CHECK(order_index >= 0)",
+          "CONSTRAINT workout_exercise_planned_sets CHECK(planned_sets >= 1)",
+          "CONSTRAINT workout_exercise_rest CHECK(rest_seconds >= 0)",
+          "CONSTRAINT workout_exercise_superset CHECK(superset_group IS NULL OR superset_group >= 0)",
+          "CONSTRAINT workout_exercise_rep_fields CHECK((rep_type = 'fixed' AND target_reps IS NOT NULL AND target_reps >= 1 AND min_reps IS NULL AND max_reps IS NULL)OR(rep_type = 'range' AND target_reps IS NULL AND min_reps IS NOT NULL AND max_reps IS NOT NULL AND min_reps >= 1 AND max_reps >= min_reps)OR(rep_type = 'amrap' AND target_reps IS NULL AND min_reps IS NULL AND max_reps IS NULL))",
+          "CONSTRAINT workout_exercise_load_fields CHECK((load_type = 'none' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'bodyweight' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'absolute' AND weight_canonical_mg IS NOT NULL AND weight_canonical_mg >= 0 AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'percentage' AND percentage IS NOT NULL AND percentage >= 0 AND percentage <= 100 AND weight_canonical_mg IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'target_rpe' AND target_rpe IS NOT NULL AND target_rpe >= 0 AND target_rpe <= 10 AND weight_canonical_mg IS NULL AND percentage IS NULL AND freeform_text IS NULL)OR(load_type = 'text' AND freeform_text IS NOT NULL AND length(freeform_text) > 0 AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL))"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "workout_exercise_parent_order",
+        "sql": "CREATE UNIQUE INDEX workout_exercise_parent_order\n  ON workout_exercise (workout_id, order_index);",
+        "unique": true,
+        "columns": []
+      }
+    },
+    {
+      "id": 5,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "workout_exercise_normalized_name",
+        "sql": "CREATE INDEX workout_exercise_normalized_name\n  ON workout_exercise (normalized_name);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 6,
+      "references": [
+        3
+      ],
+      "type": "table",
+      "data": {
+        "name": "workout_set",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "workout_exercise_id",
+            "getter_name": "workoutExerciseId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES workout_exercise(id)ON DELETE CASCADE",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "workout_exercise",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "set_index",
+            "getter_name": "setIndex",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rep_type",
+            "getter_name": "repType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_reps",
+            "getter_name": "targetReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "min_reps",
+            "getter_name": "minReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "max_reps",
+            "getter_name": "maxReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "load_type",
+            "getter_name": "loadType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "weight_canonical_mg",
+            "getter_name": "weightCanonicalMg",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "percentage",
+            "getter_name": "percentage",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "target_rpe",
+            "getter_name": "targetRpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "freeform_text",
+            "getter_name": "freeformText",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rest_seconds",
+            "getter_name": "restSeconds",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CONSTRAINT workout_set_index CHECK(set_index >= 0)",
+          "CONSTRAINT workout_set_rest CHECK(rest_seconds >= 0)",
+          "CONSTRAINT workout_set_rep_fields CHECK((rep_type = 'fixed' AND target_reps IS NOT NULL AND target_reps >= 1 AND min_reps IS NULL AND max_reps IS NULL)OR(rep_type = 'range' AND target_reps IS NULL AND min_reps IS NOT NULL AND max_reps IS NOT NULL AND min_reps >= 1 AND max_reps >= min_reps)OR(rep_type = 'amrap' AND target_reps IS NULL AND min_reps IS NULL AND max_reps IS NULL))",
+          "CONSTRAINT workout_set_load_fields CHECK((load_type = 'none' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'bodyweight' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'absolute' AND weight_canonical_mg IS NOT NULL AND weight_canonical_mg >= 0 AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'percentage' AND percentage IS NOT NULL AND percentage >= 0 AND percentage <= 100 AND weight_canonical_mg IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'target_rpe' AND target_rpe IS NOT NULL AND target_rpe >= 0 AND target_rpe <= 10 AND weight_canonical_mg IS NULL AND percentage IS NULL AND freeform_text IS NULL)OR(load_type = 'text' AND freeform_text IS NOT NULL AND length(freeform_text) > 0 AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL))"
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "references": [
+        6
+      ],
+      "type": "index",
+      "data": {
+        "on": 6,
+        "name": "workout_set_parent_order",
+        "sql": "CREATE UNIQUE INDEX workout_set_parent_order\n  ON workout_set (workout_exercise_id, set_index);",
+        "unique": true,
+        "columns": []
+      }
+    },
+    {
+      "id": 8,
+      "references": [
+        2,
+        9
+      ],
+      "type": "table",
+      "data": {
+        "name": "session",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "workout_id",
+            "getter_name": "workoutId",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "REFERENCES workout(id)ON DELETE SET NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "workout",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "setNull"
+                }
+              }
+            ]
+          },
+          {
+            "name": "schedule_entry_id",
+            "getter_name": "scheduleEntryId",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "REFERENCES schedule_entry(id)ON DELETE SET NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "schedule_entry",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "setNull"
+                }
+              }
+            ]
+          },
+          {
+            "name": "workout_name_snapshot",
+            "getter_name": "workoutNameSnapshot",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "started_at",
+            "getter_name": "startedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "ended_at",
+            "getter_name": "endedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "timezone",
+            "getter_name": "timezone",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "status",
+            "getter_name": "status",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rest_started_at",
+            "getter_name": "restStartedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rest_duration_seconds",
+            "getter_name": "restDurationSeconds",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rest_target_at",
+            "getter_name": "restTargetAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "UNIQUE(id, schedule_entry_id)",
+          "CONSTRAINT session_timezone CHECK(length(timezone) > 0)",
+          "CONSTRAINT session_status CHECK(status IN ('draft', 'running', 'paused', 'finished', 'abandoned'))",
+          "CONSTRAINT session_rest_group CHECK((rest_started_at IS NULL AND rest_duration_seconds IS NULL AND rest_target_at IS NULL)OR(rest_started_at IS NOT NULL AND rest_duration_seconds IS NOT NULL AND rest_duration_seconds >= 0 AND rest_target_at IS NOT NULL AND rest_target_at = rest_started_at + rest_duration_seconds))"
+        ],
+        "unique_keys": [
+          [
+            "id",
+            "schedule_entry_id"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "references": [
+        2,
+        8
+      ],
+      "type": "table",
+      "data": {
+        "name": "schedule_entry",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "workout_id",
+            "getter_name": "workoutId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES workout(id)ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "workout",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          },
+          {
+            "name": "date",
+            "getter_name": "date",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "start_time",
+            "getter_name": "startTime",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "label",
+            "getter_name": "label",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "status",
+            "getter_name": "status",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "session_id",
+            "getter_name": "sessionId",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "REFERENCES session(id)ON DELETE RESTRICT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "session",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "restrict"
+                }
+              }
+            ]
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "FOREIGN KEY(session_id, id)REFERENCES session(id, schedule_entry_id)ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED",
+          "CONSTRAINT schedule_entry_date CHECK(date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]' AND date(date) = date)",
+          "CONSTRAINT schedule_entry_start_time CHECK(start_time IS NULL OR(start_time >= 0 AND start_time <= 1439))",
+          "CONSTRAINT schedule_entry_status_session CHECK((status = 'planned' AND session_id IS NULL)OR(status = 'skipped' AND session_id IS NULL)OR(status = 'completed_by_session' AND session_id IS NOT NULL))"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "references": [
+        9
+      ],
+      "type": "index",
+      "data": {
+        "on": 9,
+        "name": "schedule_entry_date_status",
+        "sql": "CREATE INDEX schedule_entry_date_status ON schedule_entry (date, status);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 11,
+      "references": [
+        9
+      ],
+      "type": "index",
+      "data": {
+        "on": 9,
+        "name": "schedule_entry_workout",
+        "sql": "CREATE INDEX schedule_entry_workout ON schedule_entry (workout_id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 12,
+      "references": [
+        8
+      ],
+      "type": "index",
+      "data": {
+        "on": 8,
+        "name": "session_workout",
+        "sql": "CREATE INDEX session_workout ON session (workout_id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 13,
+      "references": [
+        8
+      ],
+      "type": "index",
+      "data": {
+        "on": 8,
+        "name": "session_schedule_entry",
+        "sql": "CREATE INDEX session_schedule_entry ON session (schedule_entry_id);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 14,
+      "references": [
+        8
+      ],
+      "type": "index",
+      "data": {
+        "on": 8,
+        "name": "session_chronology",
+        "sql": "CREATE INDEX session_chronology ON session (started_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 15,
+      "references": [
+        8
+      ],
+      "type": "index",
+      "data": {
+        "on": 8,
+        "name": "session_resume_status",
+        "sql": "CREATE INDEX session_resume_status ON session (status)\n  WHERE status IN ('running', 'paused');",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 16,
+      "references": [
+        9,
+        8
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 9,
+        "references_in_body": [
+          9,
+          8
+        ],
+        "name": "schedule_entry_completed_session_on_insert",
+        "sql": "CREATE TRIGGER schedule_entry_completed_session_on_insert\nBEFORE INSERT ON schedule_entry\nWHEN NEW.status = 'completed_by_session'\n  AND NOT EXISTS (\n    SELECT 1\n    FROM session\n    WHERE id = NEW.session_id\n      AND schedule_entry_id = NEW.id\n      AND workout_id = NEW.workout_id\n      AND status = 'finished'\n  )\nBEGIN\n  SELECT RAISE(ABORT, 'completed schedule must reference its finished session');\nEND;"
+      }
+    },
+    {
+      "id": 17,
+      "references": [
+        9,
+        8
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 9,
+        "references_in_body": [
+          9,
+          8
+        ],
+        "name": "schedule_entry_completed_session_on_update",
+        "sql": "CREATE TRIGGER schedule_entry_completed_session_on_update\nBEFORE UPDATE OF status, session_id, workout_id ON schedule_entry\nWHEN NEW.status = 'completed_by_session'\n  AND NOT EXISTS (\n    SELECT 1\n    FROM session\n    WHERE id = NEW.session_id\n      AND schedule_entry_id = NEW.id\n      AND workout_id = NEW.workout_id\n      AND status = 'finished'\n  )\nBEGIN\n  SELECT RAISE(ABORT, 'completed schedule must reference its finished session');\nEND;"
+      }
+    },
+    {
+      "id": 18,
+      "references": [
+        8,
+        9
+      ],
+      "type": "trigger",
+      "data": {
+        "on": 8,
+        "references_in_body": [
+          8,
+          9
+        ],
+        "name": "session_completed_schedule_status_on_update",
+        "sql": "CREATE TRIGGER session_completed_schedule_status_on_update\nBEFORE UPDATE OF status, workout_id ON session\nWHEN EXISTS (\n  SELECT 1\n  FROM schedule_entry\n  WHERE session_id = OLD.id\n    AND status = 'completed_by_session'\n)\n  AND (\n    NEW.status <> 'finished'\n    OR NEW.workout_id IS NOT OLD.workout_id\n  )\nBEGIN\n  SELECT RAISE(ABORT, 'cannot invalidate completed schedule session link');\nEND;"
+      }
+    },
+    {
+      "id": 19,
+      "references": [
+        8
+      ],
+      "type": "table",
+      "data": {
+        "name": "session_exercise",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "session_id",
+            "getter_name": "sessionId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES session(id)ON DELETE CASCADE",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "session",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "name_snapshot",
+            "getter_name": "nameSnapshot",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "normalized_name",
+            "getter_name": "normalizedName",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "order_index",
+            "getter_name": "orderIndex",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_sets",
+            "getter_name": "plannedSets",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_rep_type",
+            "getter_name": "plannedRepType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_target_reps",
+            "getter_name": "plannedTargetReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_min_reps",
+            "getter_name": "plannedMinReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_max_reps",
+            "getter_name": "plannedMaxReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_load_type",
+            "getter_name": "plannedLoadType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_weight_canonical_mg",
+            "getter_name": "plannedWeightCanonicalMg",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_percentage",
+            "getter_name": "plannedPercentage",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_target_rpe",
+            "getter_name": "plannedTargetRpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_freeform_text",
+            "getter_name": "plannedFreeformText",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_rest_seconds",
+            "getter_name": "plannedRestSeconds",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "superset_group",
+            "getter_name": "supersetGroup",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CONSTRAINT session_exercise_order CHECK(order_index >= 0)",
+          "CONSTRAINT session_exercise_planned_sets CHECK(planned_sets >= 1)",
+          "CONSTRAINT session_exercise_rest CHECK(planned_rest_seconds >= 0)",
+          "CONSTRAINT session_exercise_superset CHECK(superset_group IS NULL OR superset_group >= 0)",
+          "CONSTRAINT session_exercise_rep_fields CHECK((planned_rep_type = 'fixed' AND planned_target_reps IS NOT NULL AND planned_target_reps >= 1 AND planned_min_reps IS NULL AND planned_max_reps IS NULL)OR(planned_rep_type = 'range' AND planned_target_reps IS NULL AND planned_min_reps IS NOT NULL AND planned_max_reps IS NOT NULL AND planned_min_reps >= 1 AND planned_max_reps >= planned_min_reps)OR(planned_rep_type = 'amrap' AND planned_target_reps IS NULL AND planned_min_reps IS NULL AND planned_max_reps IS NULL))",
+          "CONSTRAINT session_exercise_load_fields CHECK((planned_load_type = 'none' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'bodyweight' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'absolute' AND planned_weight_canonical_mg IS NOT NULL AND planned_weight_canonical_mg >= 0 AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'percentage' AND planned_percentage IS NOT NULL AND planned_percentage >= 0 AND planned_percentage <= 100 AND planned_weight_canonical_mg IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'target_rpe' AND planned_target_rpe IS NOT NULL AND planned_target_rpe >= 0 AND planned_target_rpe <= 10 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'text' AND planned_freeform_text IS NOT NULL AND length(planned_freeform_text) > 0 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL))"
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "references": [
+        19
+      ],
+      "type": "index",
+      "data": {
+        "on": 19,
+        "name": "session_exercise_parent_order",
+        "sql": "CREATE UNIQUE INDEX session_exercise_parent_order\n  ON session_exercise (session_id, order_index);",
+        "unique": true,
+        "columns": []
+      }
+    },
+    {
+      "id": 21,
+      "references": [
+        19
+      ],
+      "type": "index",
+      "data": {
+        "on": 19,
+        "name": "session_exercise_normalized_name",
+        "sql": "CREATE INDEX session_exercise_normalized_name\n  ON session_exercise (normalized_name);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 22,
+      "references": [
+        19
+      ],
+      "type": "table",
+      "data": {
+        "name": "session_set",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY AUTOINCREMENT",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "auto-increment"
+            ]
+          },
+          {
+            "name": "session_exercise_id",
+            "getter_name": "sessionExerciseId",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES session_exercise(id)ON DELETE CASCADE",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "session_exercise",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "set_index",
+            "getter_name": "setIndex",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_rep_type",
+            "getter_name": "plannedRepType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_target_reps",
+            "getter_name": "plannedTargetReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_min_reps",
+            "getter_name": "plannedMinReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_max_reps",
+            "getter_name": "plannedMaxReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_load_type",
+            "getter_name": "plannedLoadType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_weight_canonical_mg",
+            "getter_name": "plannedWeightCanonicalMg",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_percentage",
+            "getter_name": "plannedPercentage",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_target_rpe",
+            "getter_name": "plannedTargetRpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_freeform_text",
+            "getter_name": "plannedFreeformText",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_rep_type",
+            "getter_name": "actualRepType",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_target_reps",
+            "getter_name": "actualTargetReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_min_reps",
+            "getter_name": "actualMinReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_max_reps",
+            "getter_name": "actualMaxReps",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_load_type",
+            "getter_name": "actualLoadType",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_weight_canonical_mg",
+            "getter_name": "actualWeightCanonicalMg",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_percentage",
+            "getter_name": "actualPercentage",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_target_rpe",
+            "getter_name": "actualTargetRpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "actual_freeform_text",
+            "getter_name": "actualFreeformText",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "rpe",
+            "getter_name": "rpe",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "completed",
+            "getter_name": "completed",
+            "moor_type": "bool",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "completed_at",
+            "getter_name": "completedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "planned_rest_seconds",
+            "getter_name": "plannedRestSeconds",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (planned_rest_seconds IS NULL OR planned_rest_seconds >= 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CONSTRAINT session_set_index CHECK(set_index >= 0)",
+          "CONSTRAINT session_set_rpe CHECK(rpe IS NULL OR(rpe >= 0 AND rpe <= 10))",
+          "CONSTRAINT session_set_completion CHECK((completed = 0 AND completed_at IS NULL)OR(completed = 1 AND completed_at IS NOT NULL))",
+          "CONSTRAINT session_set_planned_rep_fields CHECK((planned_rep_type = 'fixed' AND planned_target_reps IS NOT NULL AND planned_target_reps >= 1 AND planned_min_reps IS NULL AND planned_max_reps IS NULL)OR(planned_rep_type = 'range' AND planned_target_reps IS NULL AND planned_min_reps IS NOT NULL AND planned_max_reps IS NOT NULL AND planned_min_reps >= 1 AND planned_max_reps >= planned_min_reps)OR(planned_rep_type = 'amrap' AND planned_target_reps IS NULL AND planned_min_reps IS NULL AND planned_max_reps IS NULL))",
+          "CONSTRAINT session_set_planned_load_fields CHECK((planned_load_type = 'none' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'bodyweight' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'absolute' AND planned_weight_canonical_mg IS NOT NULL AND planned_weight_canonical_mg >= 0 AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'percentage' AND planned_percentage IS NOT NULL AND planned_percentage >= 0 AND planned_percentage <= 100 AND planned_weight_canonical_mg IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'target_rpe' AND planned_target_rpe IS NOT NULL AND planned_target_rpe >= 0 AND planned_target_rpe <= 10 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'text' AND planned_freeform_text IS NOT NULL AND length(planned_freeform_text) > 0 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL))",
+          "CONSTRAINT session_set_actual_rep_fields CHECK((actual_rep_type IS NULL AND actual_target_reps IS NULL AND actual_min_reps IS NULL AND actual_max_reps IS NULL)OR(actual_rep_type = 'fixed' AND actual_target_reps IS NOT NULL AND actual_target_reps >= 1 AND actual_min_reps IS NULL AND actual_max_reps IS NULL)OR(actual_rep_type = 'range' AND actual_target_reps IS NULL AND actual_min_reps IS NOT NULL AND actual_max_reps IS NOT NULL AND actual_min_reps >= 1 AND actual_max_reps >= actual_min_reps)OR(actual_rep_type = 'amrap' AND actual_target_reps IS NULL AND actual_min_reps IS NULL AND actual_max_reps IS NULL))",
+          "CONSTRAINT session_set_actual_load_fields CHECK((actual_load_type IS NULL AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'none' AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'bodyweight' AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'absolute' AND actual_weight_canonical_mg IS NOT NULL AND actual_weight_canonical_mg >= 0 AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'percentage' AND actual_percentage IS NOT NULL AND actual_percentage >= 0 AND actual_percentage <= 100 AND actual_weight_canonical_mg IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'target_rpe' AND actual_target_rpe IS NOT NULL AND actual_target_rpe >= 0 AND actual_target_rpe <= 10 AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'text' AND actual_freeform_text IS NOT NULL AND length(actual_freeform_text) > 0 AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL))"
+        ]
+      }
+    },
+    {
+      "id": 23,
+      "references": [
+        22
+      ],
+      "type": "index",
+      "data": {
+        "on": 22,
+        "name": "session_set_parent_order",
+        "sql": "CREATE UNIQUE INDEX session_set_parent_order\n  ON session_set (session_exercise_id, set_index);",
+        "unique": true,
+        "columns": []
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "app_metadata",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"app_metadata\" (\"key\" TEXT NOT NULL PRIMARY KEY, \"value\" TEXT NOT NULL);"
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"settings\" (\"key\" TEXT NOT NULL PRIMARY KEY, \"value\" TEXT NOT NULL);"
+        }
+      ]
+    },
+    {
+      "name": "workout",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"workout\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"name\" TEXT NOT NULL, \"notes\" TEXT, \"created_at\" INTEGER NOT NULL, \"archived_at\" INTEGER);"
+        }
+      ]
+    },
+    {
+      "name": "workout_exercise",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"workout_exercise\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"workout_id\" INTEGER NOT NULL REFERENCES workout(id)ON DELETE CASCADE, \"name\" TEXT NOT NULL, \"normalized_name\" TEXT NOT NULL, \"order_index\" INTEGER NOT NULL, \"planned_sets\" INTEGER NOT NULL, \"rep_type\" TEXT NOT NULL, \"target_reps\" INTEGER, \"min_reps\" INTEGER, \"max_reps\" INTEGER, \"load_type\" TEXT NOT NULL, \"weight_canonical_mg\" INTEGER, \"percentage\" INTEGER, \"target_rpe\" REAL, \"freeform_text\" TEXT, \"rest_seconds\" INTEGER NOT NULL, \"superset_group\" INTEGER, CONSTRAINT workout_exercise_order CHECK(order_index >= 0), CONSTRAINT workout_exercise_planned_sets CHECK(planned_sets >= 1), CONSTRAINT workout_exercise_rest CHECK(rest_seconds >= 0), CONSTRAINT workout_exercise_superset CHECK(superset_group IS NULL OR superset_group >= 0), CONSTRAINT workout_exercise_rep_fields CHECK((rep_type = 'fixed' AND target_reps IS NOT NULL AND target_reps >= 1 AND min_reps IS NULL AND max_reps IS NULL)OR(rep_type = 'range' AND target_reps IS NULL AND min_reps IS NOT NULL AND max_reps IS NOT NULL AND min_reps >= 1 AND max_reps >= min_reps)OR(rep_type = 'amrap' AND target_reps IS NULL AND min_reps IS NULL AND max_reps IS NULL)), CONSTRAINT workout_exercise_load_fields CHECK((load_type = 'none' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'bodyweight' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'absolute' AND weight_canonical_mg IS NOT NULL AND weight_canonical_mg >= 0 AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'percentage' AND percentage IS NOT NULL AND percentage >= 0 AND percentage <= 100 AND weight_canonical_mg IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'target_rpe' AND target_rpe IS NOT NULL AND target_rpe >= 0 AND target_rpe <= 10 AND weight_canonical_mg IS NULL AND percentage IS NULL AND freeform_text IS NULL)OR(load_type = 'text' AND freeform_text IS NOT NULL AND length(freeform_text) > 0 AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "workout_exercise_parent_order",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE UNIQUE INDEX workout_exercise_parent_order ON workout_exercise (workout_id, order_index)"
+        }
+      ]
+    },
+    {
+      "name": "workout_exercise_normalized_name",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX workout_exercise_normalized_name ON workout_exercise (normalized_name)"
+        }
+      ]
+    },
+    {
+      "name": "workout_set",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"workout_set\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"workout_exercise_id\" INTEGER NOT NULL REFERENCES workout_exercise(id)ON DELETE CASCADE, \"set_index\" INTEGER NOT NULL, \"rep_type\" TEXT NOT NULL, \"target_reps\" INTEGER, \"min_reps\" INTEGER, \"max_reps\" INTEGER, \"load_type\" TEXT NOT NULL, \"weight_canonical_mg\" INTEGER, \"percentage\" INTEGER, \"target_rpe\" REAL, \"freeform_text\" TEXT, \"rest_seconds\" INTEGER NOT NULL, CONSTRAINT workout_set_index CHECK(set_index >= 0), CONSTRAINT workout_set_rest CHECK(rest_seconds >= 0), CONSTRAINT workout_set_rep_fields CHECK((rep_type = 'fixed' AND target_reps IS NOT NULL AND target_reps >= 1 AND min_reps IS NULL AND max_reps IS NULL)OR(rep_type = 'range' AND target_reps IS NULL AND min_reps IS NOT NULL AND max_reps IS NOT NULL AND min_reps >= 1 AND max_reps >= min_reps)OR(rep_type = 'amrap' AND target_reps IS NULL AND min_reps IS NULL AND max_reps IS NULL)), CONSTRAINT workout_set_load_fields CHECK((load_type = 'none' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'bodyweight' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'absolute' AND weight_canonical_mg IS NOT NULL AND weight_canonical_mg >= 0 AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'percentage' AND percentage IS NOT NULL AND percentage >= 0 AND percentage <= 100 AND weight_canonical_mg IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = 'target_rpe' AND target_rpe IS NOT NULL AND target_rpe >= 0 AND target_rpe <= 10 AND weight_canonical_mg IS NULL AND percentage IS NULL AND freeform_text IS NULL)OR(load_type = 'text' AND freeform_text IS NOT NULL AND length(freeform_text) > 0 AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "workout_set_parent_order",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE UNIQUE INDEX workout_set_parent_order ON workout_set (workout_exercise_id, set_index)"
+        }
+      ]
+    },
+    {
+      "name": "session",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"session\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"workout_id\" INTEGER REFERENCES workout(id)ON DELETE SET NULL, \"schedule_entry_id\" INTEGER REFERENCES schedule_entry(id)ON DELETE SET NULL, \"workout_name_snapshot\" TEXT NOT NULL, \"started_at\" INTEGER NOT NULL, \"ended_at\" INTEGER, \"timezone\" TEXT NOT NULL, \"status\" TEXT NOT NULL, \"notes\" TEXT, \"rest_started_at\" INTEGER, \"rest_duration_seconds\" INTEGER, \"rest_target_at\" INTEGER, UNIQUE(id, schedule_entry_id), CONSTRAINT session_timezone CHECK(length(timezone) > 0), CONSTRAINT session_status CHECK(status IN ('draft', 'running', 'paused', 'finished', 'abandoned')), CONSTRAINT session_rest_group CHECK((rest_started_at IS NULL AND rest_duration_seconds IS NULL AND rest_target_at IS NULL)OR(rest_started_at IS NOT NULL AND rest_duration_seconds IS NOT NULL AND rest_duration_seconds >= 0 AND rest_target_at IS NOT NULL AND rest_target_at = rest_started_at + rest_duration_seconds)));"
+        }
+      ]
+    },
+    {
+      "name": "schedule_entry",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"schedule_entry\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"workout_id\" INTEGER NOT NULL REFERENCES workout(id)ON DELETE RESTRICT, \"date\" TEXT NOT NULL, \"start_time\" INTEGER, \"label\" TEXT, \"status\" TEXT NOT NULL, \"session_id\" INTEGER REFERENCES session(id)ON DELETE RESTRICT, FOREIGN KEY(session_id, id)REFERENCES session(id, schedule_entry_id)ON DELETE RESTRICT DEFERRABLE INITIALLY DEFERRED, CONSTRAINT schedule_entry_date CHECK(date GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]-[0-3][0-9]' AND date(date) = date), CONSTRAINT schedule_entry_start_time CHECK(start_time IS NULL OR(start_time >= 0 AND start_time <= 1439)), CONSTRAINT schedule_entry_status_session CHECK((status = 'planned' AND session_id IS NULL)OR(status = 'skipped' AND session_id IS NULL)OR(status = 'completed_by_session' AND session_id IS NOT NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "schedule_entry_date_status",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX schedule_entry_date_status ON schedule_entry (date, status)"
+        }
+      ]
+    },
+    {
+      "name": "schedule_entry_workout",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX schedule_entry_workout ON schedule_entry (workout_id)"
+        }
+      ]
+    },
+    {
+      "name": "session_workout",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX session_workout ON session (workout_id)"
+        }
+      ]
+    },
+    {
+      "name": "session_schedule_entry",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX session_schedule_entry ON session (schedule_entry_id)"
+        }
+      ]
+    },
+    {
+      "name": "session_chronology",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX session_chronology ON session (started_at)"
+        }
+      ]
+    },
+    {
+      "name": "session_resume_status",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX session_resume_status ON session (status) WHERE status IN ('running', 'paused')"
+        }
+      ]
+    },
+    {
+      "name": "schedule_entry_completed_session_on_insert",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER schedule_entry_completed_session_on_insert BEFORE INSERT ON schedule_entry WHEN NEW.status = 'completed_by_session' AND NOT EXISTS (SELECT 1 FROM session WHERE id = NEW.session_id AND schedule_entry_id = NEW.id AND workout_id = NEW.workout_id AND status = 'finished') BEGIN SELECT RAISE (ABORT, 'completed schedule must reference its finished session');END"
+        }
+      ]
+    },
+    {
+      "name": "schedule_entry_completed_session_on_update",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER schedule_entry_completed_session_on_update BEFORE UPDATE OF status, session_id, workout_id ON schedule_entry WHEN NEW.status = 'completed_by_session' AND NOT EXISTS (SELECT 1 FROM session WHERE id = NEW.session_id AND schedule_entry_id = NEW.id AND workout_id = NEW.workout_id AND status = 'finished') BEGIN SELECT RAISE (ABORT, 'completed schedule must reference its finished session');END"
+        }
+      ]
+    },
+    {
+      "name": "session_completed_schedule_status_on_update",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TRIGGER session_completed_schedule_status_on_update BEFORE UPDATE OF status, workout_id ON session WHEN EXISTS (SELECT 1 FROM schedule_entry WHERE session_id = OLD.id AND status = 'completed_by_session') AND(NEW.status <> 'finished' OR NEW.workout_id IS NOT OLD.workout_id)BEGIN SELECT RAISE (ABORT, 'cannot invalidate completed schedule session link');END"
+        }
+      ]
+    },
+    {
+      "name": "session_exercise",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"session_exercise\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"session_id\" INTEGER NOT NULL REFERENCES session(id)ON DELETE CASCADE, \"name_snapshot\" TEXT NOT NULL, \"normalized_name\" TEXT NOT NULL, \"order_index\" INTEGER NOT NULL, \"planned_sets\" INTEGER NOT NULL, \"planned_rep_type\" TEXT NOT NULL, \"planned_target_reps\" INTEGER, \"planned_min_reps\" INTEGER, \"planned_max_reps\" INTEGER, \"planned_load_type\" TEXT NOT NULL, \"planned_weight_canonical_mg\" INTEGER, \"planned_percentage\" INTEGER, \"planned_target_rpe\" REAL, \"planned_freeform_text\" TEXT, \"planned_rest_seconds\" INTEGER NOT NULL, \"superset_group\" INTEGER, CONSTRAINT session_exercise_order CHECK(order_index >= 0), CONSTRAINT session_exercise_planned_sets CHECK(planned_sets >= 1), CONSTRAINT session_exercise_rest CHECK(planned_rest_seconds >= 0), CONSTRAINT session_exercise_superset CHECK(superset_group IS NULL OR superset_group >= 0), CONSTRAINT session_exercise_rep_fields CHECK((planned_rep_type = 'fixed' AND planned_target_reps IS NOT NULL AND planned_target_reps >= 1 AND planned_min_reps IS NULL AND planned_max_reps IS NULL)OR(planned_rep_type = 'range' AND planned_target_reps IS NULL AND planned_min_reps IS NOT NULL AND planned_max_reps IS NOT NULL AND planned_min_reps >= 1 AND planned_max_reps >= planned_min_reps)OR(planned_rep_type = 'amrap' AND planned_target_reps IS NULL AND planned_min_reps IS NULL AND planned_max_reps IS NULL)), CONSTRAINT session_exercise_load_fields CHECK((planned_load_type = 'none' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'bodyweight' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'absolute' AND planned_weight_canonical_mg IS NOT NULL AND planned_weight_canonical_mg >= 0 AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'percentage' AND planned_percentage IS NOT NULL AND planned_percentage >= 0 AND planned_percentage <= 100 AND planned_weight_canonical_mg IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'target_rpe' AND planned_target_rpe IS NOT NULL AND planned_target_rpe >= 0 AND planned_target_rpe <= 10 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'text' AND planned_freeform_text IS NOT NULL AND length(planned_freeform_text) > 0 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "session_exercise_parent_order",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE UNIQUE INDEX session_exercise_parent_order ON session_exercise (session_id, order_index)"
+        }
+      ]
+    },
+    {
+      "name": "session_exercise_normalized_name",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX session_exercise_normalized_name ON session_exercise (normalized_name)"
+        }
+      ]
+    },
+    {
+      "name": "session_set",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"session_set\" (\"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, \"session_exercise_id\" INTEGER NOT NULL REFERENCES session_exercise(id)ON DELETE CASCADE, \"set_index\" INTEGER NOT NULL, \"planned_rep_type\" TEXT NOT NULL, \"planned_target_reps\" INTEGER, \"planned_min_reps\" INTEGER, \"planned_max_reps\" INTEGER, \"planned_load_type\" TEXT NOT NULL, \"planned_weight_canonical_mg\" INTEGER, \"planned_percentage\" INTEGER, \"planned_target_rpe\" REAL, \"planned_freeform_text\" TEXT, \"actual_rep_type\" TEXT, \"actual_target_reps\" INTEGER, \"actual_min_reps\" INTEGER, \"actual_max_reps\" INTEGER, \"actual_load_type\" TEXT, \"actual_weight_canonical_mg\" INTEGER, \"actual_percentage\" INTEGER, \"actual_target_rpe\" REAL, \"actual_freeform_text\" TEXT, \"rpe\" REAL, \"completed\" INTEGER NOT NULL, \"completed_at\" INTEGER, \"planned_rest_seconds\" INTEGER CHECK (planned_rest_seconds IS NULL OR planned_rest_seconds >= 0), CONSTRAINT session_set_index CHECK(set_index >= 0), CONSTRAINT session_set_rpe CHECK(rpe IS NULL OR(rpe >= 0 AND rpe <= 10)), CONSTRAINT session_set_completion CHECK((completed = 0 AND completed_at IS NULL)OR(completed = 1 AND completed_at IS NOT NULL)), CONSTRAINT session_set_planned_rep_fields CHECK((planned_rep_type = 'fixed' AND planned_target_reps IS NOT NULL AND planned_target_reps >= 1 AND planned_min_reps IS NULL AND planned_max_reps IS NULL)OR(planned_rep_type = 'range' AND planned_target_reps IS NULL AND planned_min_reps IS NOT NULL AND planned_max_reps IS NOT NULL AND planned_min_reps >= 1 AND planned_max_reps >= planned_min_reps)OR(planned_rep_type = 'amrap' AND planned_target_reps IS NULL AND planned_min_reps IS NULL AND planned_max_reps IS NULL)), CONSTRAINT session_set_planned_load_fields CHECK((planned_load_type = 'none' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'bodyweight' AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'absolute' AND planned_weight_canonical_mg IS NOT NULL AND planned_weight_canonical_mg >= 0 AND planned_percentage IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'percentage' AND planned_percentage IS NOT NULL AND planned_percentage >= 0 AND planned_percentage <= 100 AND planned_weight_canonical_mg IS NULL AND planned_target_rpe IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'target_rpe' AND planned_target_rpe IS NOT NULL AND planned_target_rpe >= 0 AND planned_target_rpe <= 10 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_freeform_text IS NULL)OR(planned_load_type = 'text' AND planned_freeform_text IS NOT NULL AND length(planned_freeform_text) > 0 AND planned_weight_canonical_mg IS NULL AND planned_percentage IS NULL AND planned_target_rpe IS NULL)), CONSTRAINT session_set_actual_rep_fields CHECK((actual_rep_type IS NULL AND actual_target_reps IS NULL AND actual_min_reps IS NULL AND actual_max_reps IS NULL)OR(actual_rep_type = 'fixed' AND actual_target_reps IS NOT NULL AND actual_target_reps >= 1 AND actual_min_reps IS NULL AND actual_max_reps IS NULL)OR(actual_rep_type = 'range' AND actual_target_reps IS NULL AND actual_min_reps IS NOT NULL AND actual_max_reps IS NOT NULL AND actual_min_reps >= 1 AND actual_max_reps >= actual_min_reps)OR(actual_rep_type = 'amrap' AND actual_target_reps IS NULL AND actual_min_reps IS NULL AND actual_max_reps IS NULL)), CONSTRAINT session_set_actual_load_fields CHECK((actual_load_type IS NULL AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'none' AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'bodyweight' AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'absolute' AND actual_weight_canonical_mg IS NOT NULL AND actual_weight_canonical_mg >= 0 AND actual_percentage IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'percentage' AND actual_percentage IS NOT NULL AND actual_percentage >= 0 AND actual_percentage <= 100 AND actual_weight_canonical_mg IS NULL AND actual_target_rpe IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'target_rpe' AND actual_target_rpe IS NOT NULL AND actual_target_rpe >= 0 AND actual_target_rpe <= 10 AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_freeform_text IS NULL)OR(actual_load_type = 'text' AND actual_freeform_text IS NOT NULL AND length(actual_freeform_text) > 0 AND actual_weight_canonical_mg IS NULL AND actual_percentage IS NULL AND actual_target_rpe IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "session_set_parent_order",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE UNIQUE INDEX session_set_parent_order ON session_set (session_exercise_id, set_index)"
+        }
+      ]
+    }
+  ]
+}

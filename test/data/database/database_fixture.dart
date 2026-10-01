@@ -67,6 +67,41 @@ Future<int> insertExercise(
       );
 }
 
+Future<int> insertWorkoutSet(
+  AppDatabase db, {
+  required int workoutExerciseId,
+  int setIndex = 0,
+  String repType = 'fixed',
+  int? targetReps = 5,
+  int? minReps,
+  int? maxReps,
+  String loadType = 'absolute',
+  int? weightCanonicalMg = 102058280,
+  int? percentage,
+  double? targetRpe,
+  String? freeformText,
+  int restSeconds = 90,
+}) {
+  return db
+      .into(db.workoutSet)
+      .insert(
+        WorkoutSetCompanion.insert(
+          workoutExerciseId: workoutExerciseId,
+          setIndex: setIndex,
+          repType: repType,
+          targetReps: Value(targetReps),
+          minReps: Value(minReps),
+          maxReps: Value(maxReps),
+          loadType: loadType,
+          weightCanonicalMg: Value(weightCanonicalMg),
+          percentage: Value(percentage),
+          targetRpe: Value(targetRpe),
+          freeformText: Value(freeformText),
+          restSeconds: restSeconds,
+        ),
+      );
+}
+
 Future<int> insertSchedule(
   AppDatabase db, {
   required int workoutId,
@@ -183,6 +218,7 @@ Future<int> insertSet(
   int? actualPercentage,
   double? actualTargetRpe,
   String? actualFreeformText,
+  int? plannedRestSeconds,
 }) {
   return db
       .into(db.sessionSet)
@@ -208,6 +244,7 @@ Future<int> insertSet(
           actualPercentage: Value(actualPercentage),
           actualTargetRpe: Value(actualTargetRpe),
           actualFreeformText: Value(actualFreeformText),
+          plannedRestSeconds: Value(plannedRestSeconds),
           rpe: Value(rpe),
           completed: completed,
           completedAt: Value(completedAt),

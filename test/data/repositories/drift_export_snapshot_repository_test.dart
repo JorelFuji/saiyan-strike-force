@@ -20,6 +20,11 @@ void main() {
           WorkoutCompanion.insert(name: 'Plan', createdAt: DateTime.utc(2026)),
         );
     final workoutExerciseId = await insertExercise(db, workoutId: workoutId);
+    await insertWorkoutSet(
+      db,
+      workoutExerciseId: workoutExerciseId,
+      restSeconds: 150,
+    );
     final sessionId = await db
         .into(db.session)
         .insert(
@@ -57,6 +62,11 @@ void main() {
     expect(collections.sessions.single['timezone'], 'America/Denver');
     expect(collections.workoutExercises.single['id'], workoutExerciseId);
     expect(collections.workoutExercises.single['weightCanonicalMg'], 102058280);
+    expect(
+      collections.workoutSets.single['workoutExerciseId'],
+      workoutExerciseId,
+    );
+    expect(collections.workoutSets.single['restSeconds'], 150);
     expect(collections.scheduleEntries.single['workoutId'], workoutId);
     expect(collections.sessionExercises.single['sessionId'], sessionId);
     expect(collections.sessionSets.single['completed'], isTrue);
@@ -69,11 +79,13 @@ void main() {
       '2026-01-01T01:00:00.000Z',
     );
     expect(collections.sessionSets.single['actualMinReps'], isNull);
+    expect(collections.sessionSets.single['plannedRestSeconds'], isNull);
     expect(collections.toJson().containsKey('app_metadata'), isFalse);
     expect(collections.toJson().keys, [
       'settings',
       'workouts',
       'workoutExercises',
+      'workoutSets',
       'scheduleEntries',
       'sessions',
       'sessionExercises',

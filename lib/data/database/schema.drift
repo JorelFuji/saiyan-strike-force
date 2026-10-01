@@ -121,6 +121,101 @@ CREATE UNIQUE INDEX workout_exercise_parent_order
 CREATE INDEX workout_exercise_normalized_name
   ON workout_exercise (normalized_name);
 
+CREATE TABLE workout_set (
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercise (id)
+    ON DELETE CASCADE,
+  set_index INTEGER NOT NULL,
+  rep_type TEXT NOT NULL,
+  target_reps INTEGER,
+  min_reps INTEGER,
+  max_reps INTEGER,
+  load_type TEXT NOT NULL,
+  weight_canonical_mg INTEGER,
+  percentage INTEGER,
+  target_rpe REAL,
+  freeform_text TEXT,
+  rest_seconds INTEGER NOT NULL,
+  CONSTRAINT workout_set_index CHECK (set_index >= 0),
+  CONSTRAINT workout_set_rest CHECK (rest_seconds >= 0),
+  CONSTRAINT workout_set_rep_fields CHECK (
+    (
+      rep_type = 'fixed'
+      AND target_reps IS NOT NULL
+      AND target_reps >= 1
+      AND min_reps IS NULL
+      AND max_reps IS NULL
+    )
+    OR (
+      rep_type = 'range'
+      AND target_reps IS NULL
+      AND min_reps IS NOT NULL
+      AND max_reps IS NOT NULL
+      AND min_reps >= 1
+      AND max_reps >= min_reps
+    )
+    OR (
+      rep_type = 'amrap'
+      AND target_reps IS NULL
+      AND min_reps IS NULL
+      AND max_reps IS NULL
+    )
+  ),
+  CONSTRAINT workout_set_load_fields CHECK (
+    (
+      load_type = 'none'
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'bodyweight'
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'absolute'
+      AND weight_canonical_mg IS NOT NULL
+      AND weight_canonical_mg >= 0
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'percentage'
+      AND percentage IS NOT NULL
+      AND percentage >= 0
+      AND percentage <= 100
+      AND weight_canonical_mg IS NULL
+      AND target_rpe IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'target_rpe'
+      AND target_rpe IS NOT NULL
+      AND target_rpe >= 0
+      AND target_rpe <= 10
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND freeform_text IS NULL
+    )
+    OR (
+      load_type = 'text'
+      AND freeform_text IS NOT NULL
+      AND length(freeform_text) > 0
+      AND weight_canonical_mg IS NULL
+      AND percentage IS NULL
+      AND target_rpe IS NULL
+    )
+  )
+);
+
+CREATE UNIQUE INDEX workout_set_parent_order
+  ON workout_set (workout_exercise_id, set_index);
+
 CREATE TABLE schedule_entry (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   workout_id INTEGER NOT NULL REFERENCES workout (id) ON DELETE RESTRICT,
@@ -376,6 +471,9 @@ CREATE TABLE session_set (
   rpe REAL,
   completed BOOLEAN NOT NULL,
   completed_at DATETIME,
+  planned_rest_seconds INTEGER CHECK (
+    planned_rest_seconds IS NULL OR planned_rest_seconds >= 0
+  ),
   CONSTRAINT session_set_index CHECK (set_index >= 0),
   CONSTRAINT session_set_rpe CHECK (rpe IS NULL OR (rpe >= 0 AND rpe <= 10)),
   CONSTRAINT session_set_completion CHECK (

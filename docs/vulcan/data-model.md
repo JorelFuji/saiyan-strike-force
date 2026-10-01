@@ -11,10 +11,11 @@ SQLite schema, units/precision, and encryption at rest. Persistence engine, repo
 | `app_metadata` | `key`, `value` including `schema_version` / migration bookkeeping |
 | `workout` | id, name, notes, created_at, archived_at nullable |
 | `workout_exercise` | id, workout_id, name, normalized_name, order_index, structured rep fields, structured load fields, rest_seconds, superset_group nullable |
+| `workout_set` | id, workout_exercise_id, set_index, structured rep fields, structured load fields, rest_seconds |
 | `schedule_entry` | id, workout_id, date, start_time nullable, label nullable, status (`planned`/`skipped`/`completed_by_session`), session_id nullable |
 | `session` | id, workout_id nullable, schedule_entry_id nullable, workout_name_snapshot, started_at, ended_at, timezone (IANA, captured at start), status, notes, rest_* timer fields |
 | `session_exercise` | snapshot fields per [active-session.md](features/active-session.md) |
-| `session_set` | planned + actual structured fields, rpe, completed, completed_at |
+| `session_set` | planned + actual structured fields, planned_rest_seconds nullable, rpe, completed, completed_at |
 | `settings` | key, value (units, theme mode, rest auto-start, later app-lock flag) |
 
 The `settings` table is the **only settings store** (units, theme mode, rest auto-start, and later the app-lock preference). Do not add `shared_preferences`. `flutter_secure_storage` holds the database encryption key only, not user settings.
@@ -22,6 +23,12 @@ The `settings` table is the **only settings store** (units, theme mode, rest aut
 No separate `exercise_name_history` table in v1. Autocomplete = distinct `normalized_name` from `workout_exercise` ∪ `session_exercise`, display = most recently used original `name`. Add a dedicated index table later if the dataset needs it.
 
 Migrations are versioned and must run on launch before any session resume.
+
+`workout_exercise.planned_sets` and its exercise-level rep, load, and rest
+columns are derived on every write from the ordered `workout_set` list:
+`planned_sets` is the count and the values come from the last set. They remain
+for session defaults and in-session added sets. A `session_set.planned_rest_seconds`
+of `NULL` means to use the exercise's planned rest.
 
 ## Units and precision
 

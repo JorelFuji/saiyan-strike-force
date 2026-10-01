@@ -218,11 +218,40 @@ final class DriftWorkoutRepository implements WorkoutRepository {
     if (exercises.isEmpty) {
       return;
     }
-    await database.batch(
-      (batch) => batch.insertAll(database.workoutExercise, [
-        for (var index = 0; index < exercises.length; index++)
-          _toCompanion(workoutId, index, exercises[index]),
-      ]),
+    for (var index = 0; index < exercises.length; index++) {
+      final exercise = exercises[index];
+      final exerciseId = await database
+          .into(database.workoutExercise)
+          .insert(_toCompanion(workoutId, index, exercise));
+      await database.batch(
+        (batch) => batch.insertAll(database.workoutSet, [
+          for (var setIndex = 0; setIndex < exercise.plannedSets; setIndex++)
+            _toSetCompanion(exerciseId, setIndex, exercise),
+        ]),
+      );
+    }
+  }
+
+  WorkoutSetCompanion _toSetCompanion(
+    int exerciseId,
+    int setIndex,
+    TemplateExercise exercise,
+  ) {
+    final rep = exercise.reps;
+    final load = exercise.load;
+    return WorkoutSetCompanion.insert(
+      workoutExerciseId: exerciseId,
+      setIndex: setIndex,
+      repType: rep.type.wireValue,
+      targetReps: Value(rep is FixedReps ? rep.reps : null),
+      minReps: Value(rep is RepRange ? rep.min : null),
+      maxReps: Value(rep is RepRange ? rep.max : null),
+      loadType: load.type.wireValue,
+      weightCanonicalMg: Value(load is AbsoluteLoad ? load.milligrams : null),
+      percentage: Value(load is PercentageLoad ? load.percentage : null),
+      targetRpe: Value(load is TargetRpeLoad ? load.rpe : null),
+      freeformText: Value(load is TextLoad ? load.text : null),
+      restSeconds: exercise.restSeconds,
     );
   }
 

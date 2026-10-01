@@ -1469,6 +1469,644 @@ class WorkoutExerciseCompanion extends UpdateCompanion<WorkoutExerciseData> {
   }
 }
 
+class WorkoutSet extends Table with TableInfo<WorkoutSet, WorkoutSetData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  WorkoutSet(this.attachedDatabase, [this._alias]);
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: 'NOT NULL PRIMARY KEY AUTOINCREMENT',
+  );
+  late final GeneratedColumn<int> workoutExerciseId = GeneratedColumn<int>(
+    'workout_exercise_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL REFERENCES workout_exercise(id)ON DELETE CASCADE',
+  );
+  late final GeneratedColumn<int> setIndex = GeneratedColumn<int>(
+    'set_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<String> repType = GeneratedColumn<String>(
+    'rep_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> targetReps = GeneratedColumn<int>(
+    'target_reps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> minReps = GeneratedColumn<int>(
+    'min_reps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> maxReps = GeneratedColumn<int>(
+    'max_reps',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<String> loadType = GeneratedColumn<String>(
+    'load_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  late final GeneratedColumn<int> weightCanonicalMg = GeneratedColumn<int>(
+    'weight_canonical_mg',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> percentage = GeneratedColumn<int>(
+    'percentage',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<double> targetRpe = GeneratedColumn<double>(
+    'target_rpe',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<String> freeformText = GeneratedColumn<String>(
+    'freeform_text',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
+  late final GeneratedColumn<int> restSeconds = GeneratedColumn<int>(
+    'rest_seconds',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL',
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    workoutExerciseId,
+    setIndex,
+    repType,
+    targetReps,
+    minReps,
+    maxReps,
+    loadType,
+    weightCanonicalMg,
+    percentage,
+    targetRpe,
+    freeformText,
+    restSeconds,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'workout_set';
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WorkoutSetData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WorkoutSetData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      workoutExerciseId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}workout_exercise_id'],
+      )!,
+      setIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}set_index'],
+      )!,
+      repType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rep_type'],
+      )!,
+      targetReps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_reps'],
+      ),
+      minReps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}min_reps'],
+      ),
+      maxReps: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}max_reps'],
+      ),
+      loadType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}load_type'],
+      )!,
+      weightCanonicalMg: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}weight_canonical_mg'],
+      ),
+      percentage: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}percentage'],
+      ),
+      targetRpe: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}target_rpe'],
+      ),
+      freeformText: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}freeform_text'],
+      ),
+      restSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rest_seconds'],
+      )!,
+    );
+  }
+
+  @override
+  WorkoutSet createAlias(String alias) {
+    return WorkoutSet(attachedDatabase, alias);
+  }
+
+  @override
+  List<String> get customConstraints => const [
+    'CONSTRAINT workout_set_index CHECK(set_index >= 0)',
+    'CONSTRAINT workout_set_rest CHECK(rest_seconds >= 0)',
+    'CONSTRAINT workout_set_rep_fields CHECK((rep_type = \'fixed\' AND target_reps IS NOT NULL AND target_reps >= 1 AND min_reps IS NULL AND max_reps IS NULL)OR(rep_type = \'range\' AND target_reps IS NULL AND min_reps IS NOT NULL AND max_reps IS NOT NULL AND min_reps >= 1 AND max_reps >= min_reps)OR(rep_type = \'amrap\' AND target_reps IS NULL AND min_reps IS NULL AND max_reps IS NULL))',
+    'CONSTRAINT workout_set_load_fields CHECK((load_type = \'none\' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = \'bodyweight\' AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = \'absolute\' AND weight_canonical_mg IS NOT NULL AND weight_canonical_mg >= 0 AND percentage IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = \'percentage\' AND percentage IS NOT NULL AND percentage >= 0 AND percentage <= 100 AND weight_canonical_mg IS NULL AND target_rpe IS NULL AND freeform_text IS NULL)OR(load_type = \'target_rpe\' AND target_rpe IS NOT NULL AND target_rpe >= 0 AND target_rpe <= 10 AND weight_canonical_mg IS NULL AND percentage IS NULL AND freeform_text IS NULL)OR(load_type = \'text\' AND freeform_text IS NOT NULL AND length(freeform_text) > 0 AND weight_canonical_mg IS NULL AND percentage IS NULL AND target_rpe IS NULL))',
+  ];
+  @override
+  bool get dontWriteConstraints => true;
+}
+
+class WorkoutSetData extends DataClass implements Insertable<WorkoutSetData> {
+  final int id;
+  final int workoutExerciseId;
+  final int setIndex;
+  final String repType;
+  final int? targetReps;
+  final int? minReps;
+  final int? maxReps;
+  final String loadType;
+  final int? weightCanonicalMg;
+  final int? percentage;
+  final double? targetRpe;
+  final String? freeformText;
+  final int restSeconds;
+  const WorkoutSetData({
+    required this.id,
+    required this.workoutExerciseId,
+    required this.setIndex,
+    required this.repType,
+    this.targetReps,
+    this.minReps,
+    this.maxReps,
+    required this.loadType,
+    this.weightCanonicalMg,
+    this.percentage,
+    this.targetRpe,
+    this.freeformText,
+    required this.restSeconds,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['workout_exercise_id'] = Variable<int>(workoutExerciseId);
+    map['set_index'] = Variable<int>(setIndex);
+    map['rep_type'] = Variable<String>(repType);
+    if (!nullToAbsent || targetReps != null) {
+      map['target_reps'] = Variable<int>(targetReps);
+    }
+    if (!nullToAbsent || minReps != null) {
+      map['min_reps'] = Variable<int>(minReps);
+    }
+    if (!nullToAbsent || maxReps != null) {
+      map['max_reps'] = Variable<int>(maxReps);
+    }
+    map['load_type'] = Variable<String>(loadType);
+    if (!nullToAbsent || weightCanonicalMg != null) {
+      map['weight_canonical_mg'] = Variable<int>(weightCanonicalMg);
+    }
+    if (!nullToAbsent || percentage != null) {
+      map['percentage'] = Variable<int>(percentage);
+    }
+    if (!nullToAbsent || targetRpe != null) {
+      map['target_rpe'] = Variable<double>(targetRpe);
+    }
+    if (!nullToAbsent || freeformText != null) {
+      map['freeform_text'] = Variable<String>(freeformText);
+    }
+    map['rest_seconds'] = Variable<int>(restSeconds);
+    return map;
+  }
+
+  WorkoutSetCompanion toCompanion(bool nullToAbsent) {
+    return WorkoutSetCompanion(
+      id: Value(id),
+      workoutExerciseId: Value(workoutExerciseId),
+      setIndex: Value(setIndex),
+      repType: Value(repType),
+      targetReps: targetReps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetReps),
+      minReps: minReps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(minReps),
+      maxReps: maxReps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxReps),
+      loadType: Value(loadType),
+      weightCanonicalMg: weightCanonicalMg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightCanonicalMg),
+      percentage: percentage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(percentage),
+      targetRpe: targetRpe == null && nullToAbsent
+          ? const Value.absent()
+          : Value(targetRpe),
+      freeformText: freeformText == null && nullToAbsent
+          ? const Value.absent()
+          : Value(freeformText),
+      restSeconds: Value(restSeconds),
+    );
+  }
+
+  factory WorkoutSetData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WorkoutSetData(
+      id: serializer.fromJson<int>(json['id']),
+      workoutExerciseId: serializer.fromJson<int>(json['workoutExerciseId']),
+      setIndex: serializer.fromJson<int>(json['setIndex']),
+      repType: serializer.fromJson<String>(json['repType']),
+      targetReps: serializer.fromJson<int?>(json['targetReps']),
+      minReps: serializer.fromJson<int?>(json['minReps']),
+      maxReps: serializer.fromJson<int?>(json['maxReps']),
+      loadType: serializer.fromJson<String>(json['loadType']),
+      weightCanonicalMg: serializer.fromJson<int?>(json['weightCanonicalMg']),
+      percentage: serializer.fromJson<int?>(json['percentage']),
+      targetRpe: serializer.fromJson<double?>(json['targetRpe']),
+      freeformText: serializer.fromJson<String?>(json['freeformText']),
+      restSeconds: serializer.fromJson<int>(json['restSeconds']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'workoutExerciseId': serializer.toJson<int>(workoutExerciseId),
+      'setIndex': serializer.toJson<int>(setIndex),
+      'repType': serializer.toJson<String>(repType),
+      'targetReps': serializer.toJson<int?>(targetReps),
+      'minReps': serializer.toJson<int?>(minReps),
+      'maxReps': serializer.toJson<int?>(maxReps),
+      'loadType': serializer.toJson<String>(loadType),
+      'weightCanonicalMg': serializer.toJson<int?>(weightCanonicalMg),
+      'percentage': serializer.toJson<int?>(percentage),
+      'targetRpe': serializer.toJson<double?>(targetRpe),
+      'freeformText': serializer.toJson<String?>(freeformText),
+      'restSeconds': serializer.toJson<int>(restSeconds),
+    };
+  }
+
+  WorkoutSetData copyWith({
+    int? id,
+    int? workoutExerciseId,
+    int? setIndex,
+    String? repType,
+    Value<int?> targetReps = const Value.absent(),
+    Value<int?> minReps = const Value.absent(),
+    Value<int?> maxReps = const Value.absent(),
+    String? loadType,
+    Value<int?> weightCanonicalMg = const Value.absent(),
+    Value<int?> percentage = const Value.absent(),
+    Value<double?> targetRpe = const Value.absent(),
+    Value<String?> freeformText = const Value.absent(),
+    int? restSeconds,
+  }) => WorkoutSetData(
+    id: id ?? this.id,
+    workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
+    setIndex: setIndex ?? this.setIndex,
+    repType: repType ?? this.repType,
+    targetReps: targetReps.present ? targetReps.value : this.targetReps,
+    minReps: minReps.present ? minReps.value : this.minReps,
+    maxReps: maxReps.present ? maxReps.value : this.maxReps,
+    loadType: loadType ?? this.loadType,
+    weightCanonicalMg: weightCanonicalMg.present
+        ? weightCanonicalMg.value
+        : this.weightCanonicalMg,
+    percentage: percentage.present ? percentage.value : this.percentage,
+    targetRpe: targetRpe.present ? targetRpe.value : this.targetRpe,
+    freeformText: freeformText.present ? freeformText.value : this.freeformText,
+    restSeconds: restSeconds ?? this.restSeconds,
+  );
+  WorkoutSetData copyWithCompanion(WorkoutSetCompanion data) {
+    return WorkoutSetData(
+      id: data.id.present ? data.id.value : this.id,
+      workoutExerciseId: data.workoutExerciseId.present
+          ? data.workoutExerciseId.value
+          : this.workoutExerciseId,
+      setIndex: data.setIndex.present ? data.setIndex.value : this.setIndex,
+      repType: data.repType.present ? data.repType.value : this.repType,
+      targetReps: data.targetReps.present
+          ? data.targetReps.value
+          : this.targetReps,
+      minReps: data.minReps.present ? data.minReps.value : this.minReps,
+      maxReps: data.maxReps.present ? data.maxReps.value : this.maxReps,
+      loadType: data.loadType.present ? data.loadType.value : this.loadType,
+      weightCanonicalMg: data.weightCanonicalMg.present
+          ? data.weightCanonicalMg.value
+          : this.weightCanonicalMg,
+      percentage: data.percentage.present
+          ? data.percentage.value
+          : this.percentage,
+      targetRpe: data.targetRpe.present ? data.targetRpe.value : this.targetRpe,
+      freeformText: data.freeformText.present
+          ? data.freeformText.value
+          : this.freeformText,
+      restSeconds: data.restSeconds.present
+          ? data.restSeconds.value
+          : this.restSeconds,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkoutSetData(')
+          ..write('id: $id, ')
+          ..write('workoutExerciseId: $workoutExerciseId, ')
+          ..write('setIndex: $setIndex, ')
+          ..write('repType: $repType, ')
+          ..write('targetReps: $targetReps, ')
+          ..write('minReps: $minReps, ')
+          ..write('maxReps: $maxReps, ')
+          ..write('loadType: $loadType, ')
+          ..write('weightCanonicalMg: $weightCanonicalMg, ')
+          ..write('percentage: $percentage, ')
+          ..write('targetRpe: $targetRpe, ')
+          ..write('freeformText: $freeformText, ')
+          ..write('restSeconds: $restSeconds')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    workoutExerciseId,
+    setIndex,
+    repType,
+    targetReps,
+    minReps,
+    maxReps,
+    loadType,
+    weightCanonicalMg,
+    percentage,
+    targetRpe,
+    freeformText,
+    restSeconds,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WorkoutSetData &&
+          other.id == this.id &&
+          other.workoutExerciseId == this.workoutExerciseId &&
+          other.setIndex == this.setIndex &&
+          other.repType == this.repType &&
+          other.targetReps == this.targetReps &&
+          other.minReps == this.minReps &&
+          other.maxReps == this.maxReps &&
+          other.loadType == this.loadType &&
+          other.weightCanonicalMg == this.weightCanonicalMg &&
+          other.percentage == this.percentage &&
+          other.targetRpe == this.targetRpe &&
+          other.freeformText == this.freeformText &&
+          other.restSeconds == this.restSeconds);
+}
+
+class WorkoutSetCompanion extends UpdateCompanion<WorkoutSetData> {
+  final Value<int> id;
+  final Value<int> workoutExerciseId;
+  final Value<int> setIndex;
+  final Value<String> repType;
+  final Value<int?> targetReps;
+  final Value<int?> minReps;
+  final Value<int?> maxReps;
+  final Value<String> loadType;
+  final Value<int?> weightCanonicalMg;
+  final Value<int?> percentage;
+  final Value<double?> targetRpe;
+  final Value<String?> freeformText;
+  final Value<int> restSeconds;
+  const WorkoutSetCompanion({
+    this.id = const Value.absent(),
+    this.workoutExerciseId = const Value.absent(),
+    this.setIndex = const Value.absent(),
+    this.repType = const Value.absent(),
+    this.targetReps = const Value.absent(),
+    this.minReps = const Value.absent(),
+    this.maxReps = const Value.absent(),
+    this.loadType = const Value.absent(),
+    this.weightCanonicalMg = const Value.absent(),
+    this.percentage = const Value.absent(),
+    this.targetRpe = const Value.absent(),
+    this.freeformText = const Value.absent(),
+    this.restSeconds = const Value.absent(),
+  });
+  WorkoutSetCompanion.insert({
+    this.id = const Value.absent(),
+    required int workoutExerciseId,
+    required int setIndex,
+    required String repType,
+    this.targetReps = const Value.absent(),
+    this.minReps = const Value.absent(),
+    this.maxReps = const Value.absent(),
+    required String loadType,
+    this.weightCanonicalMg = const Value.absent(),
+    this.percentage = const Value.absent(),
+    this.targetRpe = const Value.absent(),
+    this.freeformText = const Value.absent(),
+    required int restSeconds,
+  }) : workoutExerciseId = Value(workoutExerciseId),
+       setIndex = Value(setIndex),
+       repType = Value(repType),
+       loadType = Value(loadType),
+       restSeconds = Value(restSeconds);
+  static Insertable<WorkoutSetData> custom({
+    Expression<int>? id,
+    Expression<int>? workoutExerciseId,
+    Expression<int>? setIndex,
+    Expression<String>? repType,
+    Expression<int>? targetReps,
+    Expression<int>? minReps,
+    Expression<int>? maxReps,
+    Expression<String>? loadType,
+    Expression<int>? weightCanonicalMg,
+    Expression<int>? percentage,
+    Expression<double>? targetRpe,
+    Expression<String>? freeformText,
+    Expression<int>? restSeconds,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (workoutExerciseId != null) 'workout_exercise_id': workoutExerciseId,
+      if (setIndex != null) 'set_index': setIndex,
+      if (repType != null) 'rep_type': repType,
+      if (targetReps != null) 'target_reps': targetReps,
+      if (minReps != null) 'min_reps': minReps,
+      if (maxReps != null) 'max_reps': maxReps,
+      if (loadType != null) 'load_type': loadType,
+      if (weightCanonicalMg != null) 'weight_canonical_mg': weightCanonicalMg,
+      if (percentage != null) 'percentage': percentage,
+      if (targetRpe != null) 'target_rpe': targetRpe,
+      if (freeformText != null) 'freeform_text': freeformText,
+      if (restSeconds != null) 'rest_seconds': restSeconds,
+    });
+  }
+
+  WorkoutSetCompanion copyWith({
+    Value<int>? id,
+    Value<int>? workoutExerciseId,
+    Value<int>? setIndex,
+    Value<String>? repType,
+    Value<int?>? targetReps,
+    Value<int?>? minReps,
+    Value<int?>? maxReps,
+    Value<String>? loadType,
+    Value<int?>? weightCanonicalMg,
+    Value<int?>? percentage,
+    Value<double?>? targetRpe,
+    Value<String?>? freeformText,
+    Value<int>? restSeconds,
+  }) {
+    return WorkoutSetCompanion(
+      id: id ?? this.id,
+      workoutExerciseId: workoutExerciseId ?? this.workoutExerciseId,
+      setIndex: setIndex ?? this.setIndex,
+      repType: repType ?? this.repType,
+      targetReps: targetReps ?? this.targetReps,
+      minReps: minReps ?? this.minReps,
+      maxReps: maxReps ?? this.maxReps,
+      loadType: loadType ?? this.loadType,
+      weightCanonicalMg: weightCanonicalMg ?? this.weightCanonicalMg,
+      percentage: percentage ?? this.percentage,
+      targetRpe: targetRpe ?? this.targetRpe,
+      freeformText: freeformText ?? this.freeformText,
+      restSeconds: restSeconds ?? this.restSeconds,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (workoutExerciseId.present) {
+      map['workout_exercise_id'] = Variable<int>(workoutExerciseId.value);
+    }
+    if (setIndex.present) {
+      map['set_index'] = Variable<int>(setIndex.value);
+    }
+    if (repType.present) {
+      map['rep_type'] = Variable<String>(repType.value);
+    }
+    if (targetReps.present) {
+      map['target_reps'] = Variable<int>(targetReps.value);
+    }
+    if (minReps.present) {
+      map['min_reps'] = Variable<int>(minReps.value);
+    }
+    if (maxReps.present) {
+      map['max_reps'] = Variable<int>(maxReps.value);
+    }
+    if (loadType.present) {
+      map['load_type'] = Variable<String>(loadType.value);
+    }
+    if (weightCanonicalMg.present) {
+      map['weight_canonical_mg'] = Variable<int>(weightCanonicalMg.value);
+    }
+    if (percentage.present) {
+      map['percentage'] = Variable<int>(percentage.value);
+    }
+    if (targetRpe.present) {
+      map['target_rpe'] = Variable<double>(targetRpe.value);
+    }
+    if (freeformText.present) {
+      map['freeform_text'] = Variable<String>(freeformText.value);
+    }
+    if (restSeconds.present) {
+      map['rest_seconds'] = Variable<int>(restSeconds.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WorkoutSetCompanion(')
+          ..write('id: $id, ')
+          ..write('workoutExerciseId: $workoutExerciseId, ')
+          ..write('setIndex: $setIndex, ')
+          ..write('repType: $repType, ')
+          ..write('targetReps: $targetReps, ')
+          ..write('minReps: $minReps, ')
+          ..write('maxReps: $maxReps, ')
+          ..write('loadType: $loadType, ')
+          ..write('weightCanonicalMg: $weightCanonicalMg, ')
+          ..write('percentage: $percentage, ')
+          ..write('targetRpe: $targetRpe, ')
+          ..write('freeformText: $freeformText, ')
+          ..write('restSeconds: $restSeconds')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class Session extends Table with TableInfo<Session, SessionData> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3513,6 +4151,15 @@ class SessionSet extends Table with TableInfo<SessionSet, SessionSetData> {
     requiredDuringInsert: false,
     $customConstraints: '',
   );
+  late final GeneratedColumn<int> plannedRestSeconds = GeneratedColumn<int>(
+    'planned_rest_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'CHECK (planned_rest_seconds IS NULL OR planned_rest_seconds >= 0)',
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3539,6 +4186,7 @@ class SessionSet extends Table with TableInfo<SessionSet, SessionSetData> {
     rpe,
     completed,
     completedAt,
+    plannedRestSeconds,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3647,6 +4295,10 @@ class SessionSet extends Table with TableInfo<SessionSet, SessionSetData> {
         DriftSqlType.int,
         data['${effectivePrefix}completed_at'],
       ),
+      plannedRestSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}planned_rest_seconds'],
+      ),
     );
   }
 
@@ -3694,6 +4346,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
   final double? rpe;
   final int completed;
   final int? completedAt;
+  final int? plannedRestSeconds;
   const SessionSetData({
     required this.id,
     required this.sessionExerciseId,
@@ -3719,6 +4372,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
     this.rpe,
     required this.completed,
     this.completedAt,
+    this.plannedRestSeconds,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3787,6 +4441,9 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
     if (!nullToAbsent || completedAt != null) {
       map['completed_at'] = Variable<int>(completedAt);
     }
+    if (!nullToAbsent || plannedRestSeconds != null) {
+      map['planned_rest_seconds'] = Variable<int>(plannedRestSeconds);
+    }
     return map;
   }
 
@@ -3850,6 +4507,9 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
       completedAt: completedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(completedAt),
+      plannedRestSeconds: plannedRestSeconds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(plannedRestSeconds),
     );
   }
 
@@ -3891,6 +4551,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
       rpe: serializer.fromJson<double?>(json['rpe']),
       completed: serializer.fromJson<int>(json['completed']),
       completedAt: serializer.fromJson<int?>(json['completedAt']),
+      plannedRestSeconds: serializer.fromJson<int?>(json['plannedRestSeconds']),
     );
   }
   @override
@@ -3925,6 +4586,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
       'rpe': serializer.toJson<double?>(rpe),
       'completed': serializer.toJson<int>(completed),
       'completedAt': serializer.toJson<int?>(completedAt),
+      'plannedRestSeconds': serializer.toJson<int?>(plannedRestSeconds),
     };
   }
 
@@ -3953,6 +4615,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
     Value<double?> rpe = const Value.absent(),
     int? completed,
     Value<int?> completedAt = const Value.absent(),
+    Value<int?> plannedRestSeconds = const Value.absent(),
   }) => SessionSetData(
     id: id ?? this.id,
     sessionExerciseId: sessionExerciseId ?? this.sessionExerciseId,
@@ -4010,6 +4673,9 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
     rpe: rpe.present ? rpe.value : this.rpe,
     completed: completed ?? this.completed,
     completedAt: completedAt.present ? completedAt.value : this.completedAt,
+    plannedRestSeconds: plannedRestSeconds.present
+        ? plannedRestSeconds.value
+        : this.plannedRestSeconds,
   );
   SessionSetData copyWithCompanion(SessionSetCompanion data) {
     return SessionSetData(
@@ -4077,6 +4743,9 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
       completedAt: data.completedAt.present
           ? data.completedAt.value
           : this.completedAt,
+      plannedRestSeconds: data.plannedRestSeconds.present
+          ? data.plannedRestSeconds.value
+          : this.plannedRestSeconds,
     );
   }
 
@@ -4106,7 +4775,8 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
           ..write('actualFreeformText: $actualFreeformText, ')
           ..write('rpe: $rpe, ')
           ..write('completed: $completed, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('plannedRestSeconds: $plannedRestSeconds')
           ..write(')'))
         .toString();
   }
@@ -4137,6 +4807,7 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
     rpe,
     completed,
     completedAt,
+    plannedRestSeconds,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -4165,7 +4836,8 @@ class SessionSetData extends DataClass implements Insertable<SessionSetData> {
           other.actualFreeformText == this.actualFreeformText &&
           other.rpe == this.rpe &&
           other.completed == this.completed &&
-          other.completedAt == this.completedAt);
+          other.completedAt == this.completedAt &&
+          other.plannedRestSeconds == this.plannedRestSeconds);
 }
 
 class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
@@ -4193,6 +4865,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
   final Value<double?> rpe;
   final Value<int> completed;
   final Value<int?> completedAt;
+  final Value<int?> plannedRestSeconds;
   const SessionSetCompanion({
     this.id = const Value.absent(),
     this.sessionExerciseId = const Value.absent(),
@@ -4218,6 +4891,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
     this.rpe = const Value.absent(),
     this.completed = const Value.absent(),
     this.completedAt = const Value.absent(),
+    this.plannedRestSeconds = const Value.absent(),
   });
   SessionSetCompanion.insert({
     this.id = const Value.absent(),
@@ -4244,6 +4918,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
     this.rpe = const Value.absent(),
     required int completed,
     this.completedAt = const Value.absent(),
+    this.plannedRestSeconds = const Value.absent(),
   }) : sessionExerciseId = Value(sessionExerciseId),
        setIndex = Value(setIndex),
        plannedRepType = Value(plannedRepType),
@@ -4274,6 +4949,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
     Expression<double>? rpe,
     Expression<int>? completed,
     Expression<int>? completedAt,
+    Expression<int>? plannedRestSeconds,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4304,6 +4980,8 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
       if (rpe != null) 'rpe': rpe,
       if (completed != null) 'completed': completed,
       if (completedAt != null) 'completed_at': completedAt,
+      if (plannedRestSeconds != null)
+        'planned_rest_seconds': plannedRestSeconds,
     });
   }
 
@@ -4332,6 +5010,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
     Value<double?>? rpe,
     Value<int>? completed,
     Value<int?>? completedAt,
+    Value<int?>? plannedRestSeconds,
   }) {
     return SessionSetCompanion(
       id: id ?? this.id,
@@ -4360,6 +5039,7 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
       rpe: rpe ?? this.rpe,
       completed: completed ?? this.completed,
       completedAt: completedAt ?? this.completedAt,
+      plannedRestSeconds: plannedRestSeconds ?? this.plannedRestSeconds,
     );
   }
 
@@ -4444,6 +5124,9 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
     if (completedAt.present) {
       map['completed_at'] = Variable<int>(completedAt.value);
     }
+    if (plannedRestSeconds.present) {
+      map['planned_rest_seconds'] = Variable<int>(plannedRestSeconds.value);
+    }
     return map;
   }
 
@@ -4473,14 +5156,15 @@ class SessionSetCompanion extends UpdateCompanion<SessionSetData> {
           ..write('actualFreeformText: $actualFreeformText, ')
           ..write('rpe: $rpe, ')
           ..write('completed: $completed, ')
-          ..write('completedAt: $completedAt')
+          ..write('completedAt: $completedAt, ')
+          ..write('plannedRestSeconds: $plannedRestSeconds')
           ..write(')'))
         .toString();
   }
 }
 
-class DatabaseAtV1 extends GeneratedDatabase {
-  DatabaseAtV1(QueryExecutor e) : super(e);
+class DatabaseAtV2 extends GeneratedDatabase {
+  DatabaseAtV2(QueryExecutor e) : super(e);
   late final AppMetadata appMetadata = AppMetadata(this);
   late final Settings settings = Settings(this);
   late final Workout workout = Workout(this);
@@ -4492,6 +5176,11 @@ class DatabaseAtV1 extends GeneratedDatabase {
   late final Index workoutExerciseNormalizedName = Index(
     'workout_exercise_normalized_name',
     'CREATE INDEX workout_exercise_normalized_name ON workout_exercise (normalized_name)',
+  );
+  late final WorkoutSet workoutSet = WorkoutSet(this);
+  late final Index workoutSetParentOrder = Index(
+    'workout_set_parent_order',
+    'CREATE UNIQUE INDEX workout_set_parent_order ON workout_set (workout_exercise_id, set_index)',
   );
   late final Session session = Session(this);
   late final ScheduleEntry scheduleEntry = ScheduleEntry(this);
@@ -4556,6 +5245,8 @@ class DatabaseAtV1 extends GeneratedDatabase {
     workoutExercise,
     workoutExerciseParentOrder,
     workoutExerciseNormalizedName,
+    workoutSet,
+    workoutSetParentOrder,
     session,
     scheduleEntry,
     scheduleEntryDateStatus,
@@ -4581,6 +5272,13 @@ class DatabaseAtV1 extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('workout_exercise', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workout_exercise',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('workout_set', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -4633,5 +5331,5 @@ class DatabaseAtV1 extends GeneratedDatabase {
     ),
   ]);
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 }

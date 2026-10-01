@@ -82,6 +82,7 @@ void main() {
             settings: const [],
             workouts: const [],
             workoutExercises: const [],
+            workoutSets: const [],
             scheduleEntries: const [],
             sessions: const [],
             sessionExercises: const [],

@@ -23,24 +23,24 @@ void main() {
 
   tearDown(() => db.close());
 
-  test('fresh database matches the committed v1 snapshot', () async {
+  test('fresh database matches the committed v2 snapshot', () async {
     final verifier = SchemaVerifier(GeneratedHelper());
-    await verifier.migrateAndValidate(db, 1);
+    await verifier.migrateAndValidate(db, 2);
   });
 
   test('seeds schema version and leaves settings empty', () async {
     final metadata = await db.select(db.appMetadata).get();
     expect(metadata, hasLength(1));
     expect(metadata.single.key, 'schema_version');
-    expect(metadata.single.value, '1');
+    expect(metadata.single.value, '2');
 
     final userVersion = await db.customSelect('PRAGMA user_version').get();
-    expect(userVersion.single.read<int>('user_version'), 1);
+    expect(userVersion.single.read<int>('user_version'), 2);
 
     expect(await db.select(db.settings).get(), isEmpty);
   });
 
-  test('creates the eight v1 tables and lookup indexes', () async {
+  test('creates the nine v2 tables and lookup indexes', () async {
     final tables = await db
         .customSelect(
           "SELECT name FROM sqlite_master "
@@ -57,6 +57,7 @@ void main() {
       'settings',
       'workout',
       'workout_exercise',
+      'workout_set',
     ]);
 
     final indexes = await db
@@ -77,6 +78,7 @@ void main() {
       'session_workout',
       'workout_exercise_normalized_name',
       'workout_exercise_parent_order',
+      'workout_set_parent_order',
     ]);
   });
 
@@ -185,6 +187,6 @@ void main() {
     await reopened.customSelect('SELECT 1').get();
     expect(raw.select('PRAGMA foreign_keys').single['foreign_keys'], 1);
     expect(await reopened.select(reopened.appMetadata).get(), hasLength(1));
-    expect(raw.select('PRAGMA user_version').single['user_version'], 1);
+    expect(raw.select('PRAGMA user_version').single['user_version'], 2);
   });
 }

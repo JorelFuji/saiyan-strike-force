@@ -9,7 +9,7 @@ final class ExportDocument {
     required this.collections,
   });
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
   final DateTime exportedAt;
   final String appVersion;
   final ExportCollections collections;
@@ -27,6 +27,7 @@ final class ExportCollections {
     required List<Map<String, Object?>> settings,
     required List<Map<String, Object?>> workouts,
     required List<Map<String, Object?>> workoutExercises,
+    required List<Map<String, Object?>> workoutSets,
     required List<Map<String, Object?>> scheduleEntries,
     required List<Map<String, Object?>> sessions,
     required List<Map<String, Object?>> sessionExercises,
@@ -34,6 +35,7 @@ final class ExportCollections {
   }) : settings = _freeze(settings),
        workouts = _freeze(workouts),
        workoutExercises = _freeze(workoutExercises),
+       workoutSets = _freeze(workoutSets),
        scheduleEntries = _freeze(scheduleEntries),
        sessions = _freeze(sessions),
        sessionExercises = _freeze(sessionExercises),
@@ -45,6 +47,7 @@ final class ExportCollections {
   final List<Map<String, Object?>> settings;
   final List<Map<String, Object?>> workouts;
   final List<Map<String, Object?>> workoutExercises;
+  final List<Map<String, Object?>> workoutSets;
   final List<Map<String, Object?>> scheduleEntries;
   final List<Map<String, Object?>> sessions;
   final List<Map<String, Object?>> sessionExercises;
@@ -54,6 +57,7 @@ final class ExportCollections {
     'settings': settings,
     'workouts': workouts,
     'workoutExercises': workoutExercises,
+    'workoutSets': workoutSets,
     'scheduleEntries': scheduleEntries,
     'sessions': sessions,
     'sessionExercises': sessionExercises,

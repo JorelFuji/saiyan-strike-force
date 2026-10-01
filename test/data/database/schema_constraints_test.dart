@@ -294,6 +294,55 @@ void main() {
     );
   });
 
+  test(
+    'enforces workout set order, prescriptions, rest, and cascade',
+    () async {
+      final templateId = await workoutId();
+      final exerciseId = await insertExercise(db, workoutId: templateId);
+
+      await expectRejected(
+        insertWorkoutSet(db, workoutExerciseId: exerciseId, setIndex: -1),
+      );
+      await expectRejected(
+        insertWorkoutSet(db, workoutExerciseId: exerciseId, restSeconds: -1),
+      );
+      await expectRejected(
+        insertWorkoutSet(
+          db,
+          workoutExerciseId: exerciseId,
+          loadType: 'none',
+          weightCanonicalMg: 1,
+        ),
+      );
+      await insertWorkoutSet(db, workoutExerciseId: exerciseId, setIndex: 0);
+      await expectRejected(
+        insertWorkoutSet(db, workoutExerciseId: exerciseId, setIndex: 0),
+      );
+      final sessionId = await insertSession(db);
+      final sessionExerciseId = await insertSessionExercise(
+        db,
+        sessionId: sessionId,
+      );
+      await insertSet(
+        db,
+        sessionExerciseId: sessionExerciseId,
+        plannedRestSeconds: null,
+      );
+      await expectRejected(
+        insertSet(
+          db,
+          sessionExerciseId: sessionExerciseId,
+          setIndex: 1,
+          plannedRestSeconds: -1,
+        ),
+      );
+      await (db.delete(
+        db.workoutExercise,
+      )..where((row) => row.id.equals(exerciseId))).go();
+      expect(await db.select(db.workoutSet).get(), isEmpty);
+    },
+  );
+
   test('rejects inconsistent completion and rest groups', () async {
     final sessionId = await insertSession(db, includeRest: true);
     final exerciseId = await insertSessionExercise(db, sessionId: sessionId);
