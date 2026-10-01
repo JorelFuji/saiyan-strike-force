@@ -6,10 +6,46 @@ enum WorkoutBuilderPhase { initial, loading, ready, loadFailure, saving }
 
 /// One draft exercise row with a stable key for reorder and edit targeting.
 final class DraftExerciseRow {
-  const DraftExerciseRow({required this.key, required this.exercise});
+  const DraftExerciseRow({
+    required this.key,
+    required this.exercise,
+    List<int>? setKeys,
+  }) : setKeys = setKeys ?? const [];
 
   final int key;
   final TemplateExercise exercise;
+  final List<int> setKeys;
+
+  DraftExerciseRow copyWith({TemplateExercise? exercise, List<int>? setKeys}) =>
+      DraftExerciseRow(
+        key: key,
+        exercise: exercise ?? this.exercise,
+        setKeys: setKeys ?? this.setKeys,
+      );
+}
+
+enum DraftCellColumn { load, reps }
+
+final class DraftCellId {
+  const DraftCellId({
+    required this.rowKey,
+    required this.setKey,
+    required this.column,
+  });
+
+  final int rowKey;
+  final int setKey;
+  final DraftCellColumn column;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DraftCellId &&
+      other.rowKey == rowKey &&
+      other.setKey == setKey &&
+      other.column == column;
+
+  @override
+  int get hashCode => Object.hash(rowKey, setKey, column);
 }
 
 final class WorkoutBuilderState {
@@ -27,8 +63,10 @@ final class WorkoutBuilderState {
     this.validationFailureMessage,
     this.saveFailureMessage,
     this.savedTemplate,
+    Map<DraftCellId, String> cellErrors = const {},
   }) : exercises = List.unmodifiable(exercises),
-       suggestions = List.unmodifiable(suggestions);
+       suggestions = List.unmodifiable(suggestions),
+       cellErrors = Map.unmodifiable(cellErrors);
 
   final WorkoutBuilderPhase phase;
   final MassUnit massUnit;
@@ -43,9 +81,11 @@ final class WorkoutBuilderState {
   final String? validationFailureMessage;
   final String? saveFailureMessage;
   final WorkoutTemplate? savedTemplate;
+  final Map<DraftCellId, String> cellErrors;
 
   bool get isCreate => original == null;
   bool get isSaving => phase == WorkoutBuilderPhase.saving;
+  bool get hasCellErrors => cellErrors.isNotEmpty;
 
   List<TemplateExercise> get exerciseValues =>
       exercises.map((row) => row.exercise).toList(growable: false);
@@ -69,6 +109,7 @@ final class WorkoutBuilderState {
     bool clearSaveFailure = false,
     WorkoutTemplate? savedTemplate,
     bool clearSavedTemplate = false,
+    Map<DraftCellId, String>? cellErrors,
   }) => WorkoutBuilderState(
     phase: phase ?? this.phase,
     massUnit: massUnit ?? this.massUnit,
@@ -93,5 +134,6 @@ final class WorkoutBuilderState {
     savedTemplate: clearSavedTemplate
         ? null
         : (savedTemplate ?? this.savedTemplate),
+    cellErrors: cellErrors ?? this.cellErrors,
   );
 }

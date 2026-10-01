@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'workout_builder_cubit.dart';
 import 'workout_builder_state.dart';
 import 'widgets/template_exercise_editor_sheet.dart';
-import 'widgets/template_exercise_summary.dart';
+import 'widgets/template_exercise_card.dart';
 
 class WorkoutBuilderPage extends StatefulWidget {
   const WorkoutBuilderPage({super.key});
@@ -16,12 +16,14 @@ class WorkoutBuilderPage extends StatefulWidget {
 class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
   final _nameController = TextEditingController();
   final _notesController = TextEditingController();
+  final _scrollController = ScrollController();
   bool _seeded = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _notesController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -88,6 +90,8 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     );
     if (remove == true) {
       cubit.removeExercise(key);
+    } else {
+      _revealLastExercise();
     }
   }
 
@@ -96,6 +100,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
     return BlocConsumer<WorkoutBuilderCubit, WorkoutBuilderState>(
       listenWhen: (previous, current) =>
           previous.savedTemplate != current.savedTemplate ||
+          previous.saveFailureMessage != current.saveFailureMessage ||
           (previous.phase != WorkoutBuilderPhase.ready &&
               current.phase == WorkoutBuilderPhase.ready),
       listener: (context, state) {
@@ -106,6 +111,11 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
         }
         if (state.savedTemplate != null && Navigator.of(context).canPop()) {
           Navigator.of(context).pop(state.savedTemplate);
+        }
+        if (state.saveFailureMessage != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) _scrollController.jumpTo(0);
+          });
         }
       },
       builder: (context, state) {
@@ -153,6 +163,7 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
+                      controller: _scrollController,
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -219,22 +230,53 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                               itemCount: state.exercises.length,
                               itemBuilder: (context, index) {
                                 final row = state.exercises[index];
-                                return TemplateExerciseSummary(
+                                return TemplateExerciseCard(
                                   key: ValueKey(row.key),
-                                  exercise: row.exercise,
+                                  row: row,
                                   massUnit: state.massUnit,
                                   index: index,
                                   totalCount: state.exercises.length,
+                                  cubit: cubit,
                                   onEdit: () async {
-                                    final updated =
-                                        await showTemplateExerciseEditorSheet(
+                                    final edit =
+                                        await showTemplateExerciseDetailsSheet(
                                           context,
+                                          initial: row.exercise,
                                           massUnit: state.massUnit,
                                           suggestions: state.suggestions,
-                                          initial: row.exercise,
                                         );
-                                    if (updated != null) {
-                                      cubit.replaceExercise(row.key, updated);
+                                    if (edit != null) {
+                                      if (!context.mounted) return;
+                                      final replaceReps =
+                                          edit.reps != null &&
+                                          row.exercise.sets
+                                                  .map((set) => set.reps)
+                                                  .toSet()
+                                                  .length >
+                                              1;
+                                      final replaceLoad =
+                                          edit.load != null &&
+                                          row.exercise.sets
+                                                  .map((set) => set.load)
+                                                  .toSet()
+                                                  .length >
+                                              1;
+                                      final confirmed =
+                                          replaceReps || replaceLoad
+                                          ? await _confirmColumnReplacement(
+                                              context,
+                                              row.exercise.plannedSets,
+                                              reps: replaceReps,
+                                              load: replaceLoad,
+                                            )
+                                          : true;
+                                      if (!context.mounted) return;
+                                      if (confirmed) {
+                                        cubit.applyExerciseDetails(
+                                          row.key,
+                                          edit,
+                                        );
+                                      }
                                     }
                                   },
                                   onRemove: () => _confirmRemove(
@@ -243,13 +285,34 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
                                     row.key,
                                     row.exercise.name,
                                   ),
-                                  onMoveEarlier: () =>
-                                      cubit.moveEarlier(row.key),
-                                  onMoveLater: () => cubit.moveLater(row.key),
+                                  onMoveEarlier: () {
+                                    cubit.moveEarlier(row.key);
+                                    _revealLastExercise();
+                                  },
+                                  onMoveLater: () {
+                                    cubit.moveLater(row.key);
+                                    _revealLastExercise();
+                                  },
                                   onGroupWithPrevious: () =>
                                       cubit.groupWithPrevious(row.key),
                                   onRemoveFromSuperset: () =>
                                       cubit.removeFromSuperset(row.key),
+                                  onRemoveSet: (setNumber, removed) {
+                                    ScaffoldMessenger.of(context)
+                                      ..hideCurrentSnackBar()
+                                      ..showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Set $setNumber removed',
+                                          ),
+                                          action: SnackBarAction(
+                                            label: 'Undo',
+                                            onPressed: () =>
+                                                cubit.restoreSet(removed),
+                                          ),
+                                        ),
+                                      );
+                                  },
                                   enabled: !state.isSaving,
                                 );
                               },
@@ -302,6 +365,52 @@ class _WorkoutBuilderPageState extends State<WorkoutBuilderPage> {
         );
       },
     );
+  }
+
+  void _revealLastExercise() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_scrollController.hasClients) return;
+        final target = _scrollController.position.maxScrollExtent - 360;
+        _scrollController.jumpTo(
+          target.clamp(0.0, _scrollController.position.maxScrollExtent),
+        );
+      });
+    });
+  }
+
+  Future<bool> _confirmColumnReplacement(
+    BuildContext context,
+    int count, {
+    required bool reps,
+    required bool load,
+  }) async {
+    final label = reps && load
+        ? 'reps and load'
+        : reps
+        ? 'reps'
+        : 'load';
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Replace $label on all $count sets?'),
+        content: const Text(
+          'This will overwrite the values currently set on each row.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Replace'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
   }
 }
 

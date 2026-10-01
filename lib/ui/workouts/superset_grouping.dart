@@ -44,16 +44,10 @@ List<DraftExerciseRow> normalizeSupersetRows(List<DraftExerciseRow> rows) {
       () {
         final token = row.exercise.supersetGroup;
         if (token == null || !validTokens.contains(token)) {
-          return DraftExerciseRow(
-            key: row.key,
-            exercise: withSupersetGroup(row.exercise, null),
-          );
+          return row.copyWith(exercise: withSupersetGroup(row.exercise, null));
         }
         final dense = denseTokens.putIfAbsent(token, () => nextToken++);
-        return DraftExerciseRow(
-          key: row.key,
-          exercise: withSupersetGroup(row.exercise, dense),
-        );
+        return row.copyWith(exercise: withSupersetGroup(row.exercise, dense));
       }(),
   ];
 }
@@ -66,13 +60,11 @@ List<DraftExerciseRow> groupWithPrevious(
   final updated = List<DraftExerciseRow>.of(rows);
   final previous = updated[index - 1].exercise;
   final token = previous.supersetGroup ?? _nextToken(updated);
-  updated[index] = DraftExerciseRow(
-    key: updated[index].key,
+  updated[index] = updated[index].copyWith(
     exercise: withSupersetGroup(updated[index].exercise, token),
   );
   if (previous.supersetGroup == null) {
-    updated[index - 1] = DraftExerciseRow(
-      key: updated[index - 1].key,
+    updated[index - 1] = updated[index - 1].copyWith(
       exercise: withSupersetGroup(previous, token),
     );
   }
@@ -85,8 +77,7 @@ List<DraftExerciseRow> removeFromSuperset(
 ) {
   if (index < 0 || index >= rows.length) return rows;
   final updated = List<DraftExerciseRow>.of(rows);
-  updated[index] = DraftExerciseRow(
-    key: updated[index].key,
+  updated[index] = updated[index].copyWith(
     exercise: withSupersetGroup(updated[index].exercise, null),
   );
   return normalizeSupersetRows(updated);

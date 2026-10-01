@@ -14,6 +14,32 @@ Future<TemplateExercise?> showTemplateExerciseEditorSheet(
   required List<ExerciseNameSuggestion> suggestions,
   TemplateExercise? initial,
 }) {
+  if (initial != null) {
+    return showTemplateExerciseDetailsSheet(
+      context,
+      initial: initial,
+      massUnit: massUnit,
+      suggestions: suggestions,
+    ).then((edit) {
+      if (edit == null) return null;
+      final sets = initial.sets
+          .map(
+            (set) => TemplateSet.create(
+              reps: edit.reps ?? set.reps,
+              load: edit.load ?? set.load,
+              restSeconds: set.restSeconds,
+            ),
+          )
+          .map((result) => (result as Ok<TemplateSet>).value)
+          .toList();
+      final result = TemplateExercise.create(
+        name: edit.name,
+        sets: sets,
+        supersetGroup: initial.supersetGroup,
+      );
+      return (result as Ok<TemplateExercise>).value;
+    });
+  }
   return showModalBottomSheet<TemplateExercise>(
     context: context,
     isScrollControlled: true,
@@ -22,6 +48,227 @@ Future<TemplateExercise?> showTemplateExerciseEditorSheet(
       massUnit: massUnit,
       suggestions: suggestions,
       initial: initial,
+    ),
+  );
+}
+
+final class TemplateExerciseDetailsEdit {
+  const TemplateExerciseDetailsEdit({required this.name, this.reps, this.load});
+  final String name;
+  final RepPrescription? reps;
+  final LoadPrescription? load;
+}
+
+Future<TemplateExerciseDetailsEdit?> showTemplateExerciseDetailsSheet(
+  BuildContext context, {
+  required TemplateExercise initial,
+  required MassUnit massUnit,
+  required List<ExerciseNameSuggestion> suggestions,
+}) => showModalBottomSheet<TemplateExerciseDetailsEdit>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  builder: (_) => _TemplateExerciseDetailsSheet(
+    initial: initial,
+    massUnit: massUnit,
+    suggestions: suggestions,
+  ),
+);
+
+class _TemplateExerciseDetailsSheet extends StatefulWidget {
+  const _TemplateExerciseDetailsSheet({
+    required this.initial,
+    required this.massUnit,
+    required this.suggestions,
+  });
+  final TemplateExercise initial;
+  final MassUnit massUnit;
+  final List<ExerciseNameSuggestion> suggestions;
+  @override
+  State<_TemplateExerciseDetailsSheet> createState() =>
+      _TemplateExerciseDetailsSheetState();
+}
+
+class _TemplateExerciseDetailsSheetState
+    extends State<_TemplateExerciseDetailsSheet> {
+  late final TextEditingController _name;
+  late final TextEditingController _reps;
+  late final TextEditingController _max;
+  late final TextEditingController _load;
+  late RepType _repType;
+  late LoadType _loadType;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _name = TextEditingController(text: widget.initial.name);
+    _reps = TextEditingController();
+    _max = TextEditingController();
+    _load = TextEditingController();
+    _repType = widget.initial.sets.first.reps.type;
+    _loadType = widget.initial.sets.first.load.type;
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _reps.dispose();
+    _max.dispose();
+    _load.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final repsChanged = _repType != widget.initial.sets.first.reps.type;
+    final loadChanged = _loadType != widget.initial.sets.first.load.type;
+    if (repsChanged && _repType != RepType.amrap && _reps.text.trim().isEmpty) {
+      setState(() => _error = 'Enter a value when changing the rep mode.');
+      return;
+    }
+    if (loadChanged &&
+        _loadType != LoadType.none &&
+        _loadType != LoadType.bodyweight &&
+        _load.text.trim().isEmpty) {
+      setState(() => _error = 'Enter a value when changing the load mode.');
+      return;
+    }
+    RepPrescription? reps;
+    if (_reps.text.trim().isNotEmpty || _repType == RepType.amrap) {
+      final result = switch (_repType) {
+        RepType.fixed => RepPrescription.fixed(int.tryParse(_reps.text) ?? 0),
+        RepType.range => RepPrescription.range(
+          int.tryParse(_reps.text) ?? 0,
+          int.tryParse(_max.text) ?? 0,
+        ),
+        RepType.amrap => const Ok<RepPrescription>(Amrap()),
+      };
+      if (result case Err(:final failure)) {
+        setState(() => _error = failure.message);
+        return;
+      }
+      reps = (result as Ok<RepPrescription>).value;
+    }
+    LoadPrescription? load;
+    if (_load.text.trim().isNotEmpty ||
+        _loadType == LoadType.none ||
+        _loadType == LoadType.bodyweight) {
+      final result = switch (_loadType) {
+        LoadType.none => const Ok<LoadPrescription>(NoLoad()),
+        LoadType.bodyweight => const Ok<LoadPrescription>(BodyweightLoad()),
+        LoadType.absolute => _absoluteLoad(_load.text, widget.massUnit),
+        LoadType.percentage => LoadPrescription.percentage(
+          int.tryParse(_load.text) ?? -1,
+        ),
+        LoadType.targetRpe => LoadPrescription.targetRpe(
+          double.tryParse(_load.text) ?? double.nan,
+        ),
+        LoadType.text => LoadPrescription.text(_load.text),
+      };
+      if (result case Err(:final failure)) {
+        setState(() => _error = failure.message);
+        return;
+      }
+      load = (result as Ok<LoadPrescription>).value;
+    }
+    Navigator.of(context).pop(
+      TemplateExerciseDetailsEdit(name: _name.text, reps: reps, load: load),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+    child: SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Edit details',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _name,
+            decoration: const InputDecoration(labelText: 'Exercise name'),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<RepType>(
+            initialValue: _repType,
+            decoration: const InputDecoration(labelText: 'Rep mode'),
+            items: RepType.values
+                .map(
+                  (type) => DropdownMenuItem(
+                    value: type,
+                    child: Text(_repTypeLabel(type)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) => setState(() => _repType = value!),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Leave blank to keep each set\'s value',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (_repType != RepType.amrap)
+            TextField(
+              controller: _reps,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: _repType == RepType.range ? 'Minimum reps' : 'Reps',
+              ),
+            ),
+          if (_repType == RepType.range)
+            TextField(
+              controller: _max,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Maximum reps'),
+            ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<LoadType>(
+            initialValue: _loadType,
+            decoration: const InputDecoration(labelText: 'Load mode'),
+            items: LoadType.values
+                .map(
+                  (type) => DropdownMenuItem(
+                    value: type,
+                    child: Text(_loadTypeLabel(type)),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) => setState(() => _loadType = value!),
+          ),
+          if (_loadType != LoadType.none && _loadType != LoadType.bodyweight)
+            TextField(
+              controller: _load,
+              keyboardType: _loadType == LoadType.text
+                  ? TextInputType.text
+                  : const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: _loadType == LoadType.absolute
+                    ? 'Load (${widget.massUnit.wireValue})'
+                    : 'Load value',
+              ),
+            ),
+          if (_error != null)
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 48,
+            child: FilledButton(
+              onPressed: _submit,
+              child: const Text('Save details'),
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
