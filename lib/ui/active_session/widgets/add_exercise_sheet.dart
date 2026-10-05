@@ -4,6 +4,7 @@ import '../../../core/result.dart';
 import '../../../domain/models/active_session.dart';
 import '../../../domain/models/mass.dart';
 import '../../../domain/models/prescriptions.dart';
+import '../../core/formatters/load_type_label.dart';
 
 /// Focused, local form for a session-only exercise prescription.
 class AddExerciseSheet extends StatefulWidget {
@@ -165,8 +166,10 @@ class _AddExerciseSheetState extends State<AddExerciseSheet> {
               decoration: const InputDecoration(labelText: 'Load mode'),
               items: LoadType.values
                   .map(
-                    (type) =>
-                        DropdownMenuItem(value: type, child: Text(type.name)),
+                    (type) => DropdownMenuItem(
+                      value: type,
+                      child: Text(loadTypeLabel(type)),
+                    ),
                   )
                   .toList(),
               onChanged: (value) => setState(() => _loadType = value!),

@@ -6,6 +6,7 @@ import '../../../domain/models/mass.dart';
 import '../../../domain/models/prescriptions.dart';
 import '../../../domain/models/workout_template.dart';
 import '../../core/formatters/load_formatter.dart';
+import '../../core/formatters/load_type_label.dart';
 
 /// Opens the template exercise editor and returns a validated [TemplateExercise].
 Future<TemplateExercise?> showTemplateExerciseEditorSheet(
@@ -233,7 +234,7 @@ class _TemplateExerciseDetailsSheetState
                 .map(
                   (type) => DropdownMenuItem(
                     value: type,
-                    child: Text(_loadTypeLabel(type)),
+                    child: Text(loadTypeLabel(type)),
                   ),
                 )
                 .toList(),
@@ -567,7 +568,7 @@ class _TemplateExerciseEditorSheetState
                           .map(
                             (type) => DropdownMenuItem(
                               value: type,
-                              child: Text(_loadTypeLabel(type)),
+                              child: Text(loadTypeLabel(type)),
                             ),
                           )
                           .toList(),
@@ -638,15 +639,6 @@ String _repTypeLabel(RepType type) => switch (type) {
   RepType.fixed => 'Fixed reps',
   RepType.range => 'Rep range',
   RepType.amrap => 'AMRAP',
-};
-
-String _loadTypeLabel(LoadType type) => switch (type) {
-  LoadType.none => 'No load',
-  LoadType.bodyweight => 'Bodyweight',
-  LoadType.absolute => 'Absolute weight',
-  LoadType.percentage => 'Percentage',
-  LoadType.targetRpe => 'Target RPE',
-  LoadType.text => 'Text',
 };
 
 Result<LoadPrescription> _absoluteLoad(String input, MassUnit unit) {
